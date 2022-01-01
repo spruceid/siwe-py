@@ -137,7 +137,7 @@ class SiweMessage:
 
         if self.resources:
             resources_field = "\n".join(
-                ["Resources:"].extend([f"- {resource}" for resource in self.resources])
+                ["Resources:"] + [f"- {resource}" for resource in self.resources]
             )
             suffix_array.append(resources_field)
 
