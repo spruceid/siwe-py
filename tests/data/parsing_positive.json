@@ -7,9 +7,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z",
+      "issued_at": "2021-09-30T16:25:24.000Z",
       "resources": ["ipfs://Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu", "https://example.com/my-web2-claim.json"]
     }
   },
@@ -21,9 +21,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z"
+      "issued_at": "2021-09-30T16:25:24.000Z"
     }
   },
   "timestamp without microseconds": {
@@ -34,9 +34,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24Z"
+      "issued_at": "2021-09-30T16:25:24Z"
     }
   },
   "domain is RFC 3986 authority with IP": {
@@ -47,9 +47,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z"
+      "issued_at": "2021-09-30T16:25:24.000Z"
     }
   },
   "domain is RFC 3986 authority with userinfo": {
@@ -60,9 +60,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z"
+      "issued_at": "2021-09-30T16:25:24.000Z"
     }
   },
   "domain is RFC 3986 authority with port": {
@@ -73,9 +73,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z"
+      "issued_at": "2021-09-30T16:25:24.000Z"
     }
   },
   "domain is RFC 3986 authority with userinfo and port": {
@@ -86,9 +86,9 @@
       "statement": "I accept the ServiceOrg Terms of Service: https://service.org/tos",
       "uri": "https://service.org/login",
       "version": "1",
-      "chainId": "1",
+      "chain_id": "1",
       "nonce": "32891757",
-      "issuedAt": "2021-09-30T16:25:24.000Z"
+      "issued_at": "2021-09-30T16:25:24.000Z"
     }
   }
 }
