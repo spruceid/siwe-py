@@ -13,6 +13,14 @@ class MessageGeneration(unittest.TestCase):
             siwe_message = SiweMessage(message=value["fields"])
             self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
 
+    def test_regex_parsing_valid_message(self):
+        with open('data/parsing_positive.json', 'r') as f:
+            data = json.load(fp=f)
+
+        for desc, value in data.items():
+            siwe_message = SiweMessage(message=value["message"])
+            self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
+
     def test_invalid_message(self):
         # TODO: Add Invalid message tests for catching exceptions
         self.assertTrue(True, "Not implemented.")

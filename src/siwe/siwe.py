@@ -6,6 +6,8 @@ from typing import Optional, List, Union
 
 from web3 import Web3, HTTPProvider
 
+from .parsed import ParsedMessage as RegExpParsedMessage
+
 
 class SignatureType(Enum):
     """Types of signatures supported by this library"""
@@ -79,9 +81,8 @@ class SiweMessage:
     def __init__(self, message: Union[str, dict] = None):
         if isinstance(message, str):
             # TODO: Support message parsing with abnf library
-            raise NotImplementedError(
-                "The SiweMessage class does not yet support parsing string messages."
-            )
+            for k, v in RegExpParsedMessage(message=message).__dict__.items():
+                setattr(self, k, v)
         elif isinstance(message, dict):
             for k, v in message.items():
                 setattr(self, k, v)
