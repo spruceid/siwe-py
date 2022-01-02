@@ -18,6 +18,14 @@ class MessageGeneration(unittest.TestCase):
             data = json.load(fp=f)
 
         for desc, value in data.items():
+            siwe_message = SiweMessage(message=value["message"], abnf=False)
+            self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
+
+    def test_abnf_parsing_valid_message(self):
+        with open('data/parsing_positive.json', 'r') as f:
+            data = json.load(fp=f)
+
+        for desc, value in data.items():
             siwe_message = SiweMessage(message=value["message"])
             self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
 

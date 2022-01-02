@@ -1,9 +1,10 @@
 import re
 
 from .defs import REGEX_MESSAGE
+from .grammars import eip4361
 
 
-class ParsedMessage:
+class RegExpParsedMessage:
 
     def __init__(self, message: str):
         expr = re.compile(REGEX_MESSAGE)
@@ -27,3 +28,21 @@ class ParsedMessage:
         self.resources = match.group(expr.groupindex["resources"])
         if self.resources:
             self.resources = self.resources.split("\n- ")[1:]
+
+
+class ABNFParsedMessage:
+
+    def __init__(self, message: str):
+        parser = eip4361.Rule("sign-in-with-ethereum")
+        node = parser.parse_all(message)
+
+        for child in node.children:
+            if child.name in ["domain", "address", "statement", "uri", "version", "nonce", "chain-id", "issued-at",
+                              "expiration-time", "not-before", "request-id", "resources"]:
+                setattr(self, child.name.replace("-", "_"), child.value)
+
+            if child.name == "resources":
+                resources = []
+                for resource in child.children:
+                    resources.extend([r.value for r in resource.children if r.name == "uri"])
+                setattr(self, "resources", resources)

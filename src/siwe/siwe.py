@@ -6,7 +6,7 @@ from typing import Optional, List, Union
 
 from web3 import Web3, HTTPProvider
 
-from .parsed import ParsedMessage as RegExpParsedMessage
+from .parsed import RegExpParsedMessage, ABNFParsedMessage
 
 
 class SignatureType(Enum):
@@ -78,11 +78,14 @@ class SiweMessage:
 
     signature_type: SignatureType  # Type of sign message to be generated.
 
-    def __init__(self, message: Union[str, dict] = None):
+    def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
         if isinstance(message, str):
-            # TODO: Support message parsing with abnf library
-            for k, v in RegExpParsedMessage(message=message).__dict__.items():
-                setattr(self, k, v)
+            if abnf:
+                for k, v in ABNFParsedMessage(message=message).__dict__.items():
+                    setattr(self, k, v)
+            else:
+                for k, v in RegExpParsedMessage(message=message).__dict__.items():
+                    setattr(self, k, v)
         elif isinstance(message, dict):
             for k, v in message.items():
                 setattr(self, k, v)
