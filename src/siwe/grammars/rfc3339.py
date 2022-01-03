@@ -1,13 +1,18 @@
 from abnf.parser import Rule as _Rule
 from abnf.grammars.misc import load_grammar_rules
-from .rfc5234 import Rule as rfc_5234
+from . import rfc5234
 
 
-@load_grammar_rules()
+@load_grammar_rules(
+    [
+        # RFC 5234
+        ("DIGIT", rfc5234.Rule("DIGIT")),
+    ]
+)
 class Rule(_Rule):
     """Rules from RFC 3339"""
 
-    grammar = rfc_5234.grammar + [
+    grammar = [
         'date-fullyear = 4DIGIT',
         'date-month = 2DIGIT',
         'date-mday = 2DIGIT',
