@@ -117,7 +117,7 @@ class SiweMessage:
 
         if self.issued_at is None:
             # TODO: Should we default to UTC or settle for local time? UX may be better for local
-            self.issued_at = datetime.datetime.now().isoformat()
+            self.issued_at = datetime.datetime.now().astimezone().isoformat()
 
         issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
