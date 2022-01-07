@@ -90,11 +90,6 @@ class SiweMessage:
             for k, v in message.items():
                 setattr(self, k, v)
 
-    def regex_from_message(self, message: str):
-        raise NotImplementedError(
-            "The SiweMessage class does not yet support regex_from_message."
-        )
-
     def to_message(self) -> str:
         """
         Retrieve an EIP-4361 formatted message for signature. It is recommended to instead use
