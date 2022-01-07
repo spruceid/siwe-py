@@ -3,10 +3,12 @@ import json
 
 from siwe.siwe import SiweMessage
 
+BASE_TESTS = "tests/siwe/test/"
+
 
 class MessageGeneration(unittest.TestCase):
     def test_valid_message(self):
-        with open("tests/data/parsing_positive.json", "r") as f:
+        with open(BASE_TESTS + "parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
@@ -18,7 +20,7 @@ class MessageGeneration(unittest.TestCase):
             )
 
     def test_regex_parsing_valid_message(self):
-        with open("tests/data/parsing_positive.json", "r") as f:
+        with open(BASE_TESTS + "parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
@@ -30,7 +32,7 @@ class MessageGeneration(unittest.TestCase):
             )
 
     def test_abnf_parsing_valid_message(self):
-        with open("tests/data/parsing_positive.json", "r") as f:
+        with open(BASE_TESTS + "parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
