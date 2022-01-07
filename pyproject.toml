@@ -2,15 +2,12 @@
 name = "siwe"
 version = "0.1.0"
 description = "A Python implementation of Sign-In with Ethereum (EIP-4361)."
-license = "MIT"
+license = "MIT OR Apache-2.0"
 authors = ["Spruce Systems, Inc. <hello@spruceid.com>"]
 readme = "README.md"
 homepage = "https://login.xyz"
 repository = "https://github.com/spruceid/siwe-py"
 keywords = ["SIWE", "EIP-4361", "Sign-In with Ethereum", "Spruce ID"]
-packages = [
-    { include = "siwe", from = "src" }
-]
 
 [tool.poetry.dependencies]
 python = ">3.7.0,<3.7.1 || >3.7.1,<4.0"
