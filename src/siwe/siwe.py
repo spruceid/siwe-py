@@ -190,7 +190,7 @@ class SiweMessage:
             raise SiweError.MALFORMED_SESSION
 
         address = w3.eth.account.recover_message(message, signature=message)
-        if address.lower() != self.address.lower():
+        if address != self.address:
             if not check_contract_wallet_signature(message=self, provider=provider):
                 # TODO: Add error context
                 raise SiweError.INVALID_SIGNATURE
