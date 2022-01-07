@@ -215,5 +215,4 @@ def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider
 
 
 def generate_nonce() -> str:
-    # TODO: If necessary, reevaluate how we want to generate the nonce
     return secrets.token_hex(12)
