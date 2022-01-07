@@ -1,4 +1,5 @@
 import re
+import abnf
 
 from .defs import REGEX_MESSAGE
 from .grammars import eip4361
@@ -10,7 +11,7 @@ class RegExpParsedMessage:
         match = re.match(REGEX_MESSAGE, message)
 
         if not match:
-            raise Exception("Message did not match the regular expression.")
+            raise ValueError("Message did not match the regular expression.")
 
         self.match = match
         self.domain = match.group(expr.groupindex["domain"])
@@ -32,7 +33,10 @@ class RegExpParsedMessage:
 class ABNFParsedMessage:
     def __init__(self, message: str):
         parser = eip4361.Rule("sign-in-with-ethereum")
-        node = parser.parse_all(message)
+        try:
+            node = parser.parse_all(message)
+        except abnf.ParseError as e:
+            raise ValueError from e
 
         for child in node.children:
             if child.name in [

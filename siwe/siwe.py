@@ -3,8 +3,10 @@ import secrets
 from dateutil import parser
 from enum import Enum
 from typing import Optional, List, Union
+import eth_utils
 
 from web3 import Web3, HTTPProvider
+import eth_account.messages
 
 from .parsed import RegExpParsedMessage, ABNFParsedMessage
 
@@ -76,7 +78,9 @@ class SiweMessage:
 
     signature: Optional[str] = None  # Signature of the message signed by the wallet.
 
-    signature_type: SignatureType  # Type of sign message to be generated.
+    signature_type: SignatureType = (
+        SignatureType.PERSONAL_SIGNATURE
+    )  # Type of sign message to be generated.
 
     def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
         if isinstance(message, str):
@@ -159,7 +163,7 @@ class SiweMessage:
             message = self.to_message()
         return message
 
-    def validate(self, provider: HTTPProvider) -> bool:
+    def validate(self, provider: Optional[HTTPProvider] = None) -> bool:
         """
         Validates the integrity of fields of this SiweMessage object by matching its signature.
 
@@ -167,7 +171,7 @@ class SiweMessage:
         Contract Wallets that implement EIP-1271 is needed.
         :return: True if the message is valid and false otherwise
         """
-        message = self.sign_message()
+        message = eth_account.messages.encode_defunct(text=self.sign_message())
         w3 = Web3(provider=provider)
 
         missing = []
@@ -184,11 +188,15 @@ class SiweMessage:
             # TODO: Add error context
             raise SiweError.MALFORMED_SESSION
 
-        address = w3.eth.account.recover_message(message, signature=message)
-        if address != self.address:
-            if not check_contract_wallet_signature(message=self, provider=provider):
-                # TODO: Add error context
-                raise SiweError.INVALID_SIGNATURE
+        try:
+            address = w3.eth.account.recover_message(message, signature=self.signature)
+        except eth_utils.exceptions.ValidationError:
+            return False
+
+        # if address != self.address:
+        #     if not check_contract_wallet_signature(message=self, provider=provider):
+        #         # TODO: Add error context
+        #         raise SiweError.INVALID_SIGNATURE
 
         parsed_message = SiweMessage(message=message)
         # TODO: Remove external date parsing dependency in favor of native libs
