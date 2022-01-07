@@ -6,7 +6,7 @@ from siwe.siwe import SiweMessage
 
 class MessageGeneration(unittest.TestCase):
     def test_valid_message(self):
-        with open('data/parsing_positive.json', 'r') as f:
+        with open('tests/data/parsing_positive.json', 'r') as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
@@ -14,7 +14,7 @@ class MessageGeneration(unittest.TestCase):
             self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
 
     def test_regex_parsing_valid_message(self):
-        with open('data/parsing_positive.json', 'r') as f:
+        with open('tests/data/parsing_positive.json', 'r') as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
@@ -22,7 +22,7 @@ class MessageGeneration(unittest.TestCase):
             self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
 
     def test_abnf_parsing_valid_message(self):
-        with open('data/parsing_positive.json', 'r') as f:
+        with open('tests/data/parsing_positive.json', 'r') as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
