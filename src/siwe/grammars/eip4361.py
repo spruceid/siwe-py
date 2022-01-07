@@ -3,6 +3,7 @@ from abnf.grammars import rfc3986
 from abnf.parser import Rule as _Rule
 from . import rfc5234, rfc3339
 
+
 @load_grammar_rules(
     [
         # RFC 3986
@@ -18,7 +19,7 @@ from . import rfc5234, rfc3339
         ("ALPHA", rfc5234.Rule("ALPHA")),
         ("DIGIT", rfc5234.Rule("DIGIT")),
         # RFC 3339
-        ("date-time", rfc3339.Rule("date-time"))
+        ("date-time", rfc3339.Rule("date-time")),
     ]
 )
 class Rule(_Rule):
@@ -29,17 +30,17 @@ class Rule(_Rule):
         'statement LF ] LF %s"URI: " uri LF %s"Version: " version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF '
         '%s"Issued At: " issued-at [ LF %s"Expiration Time: " expiration-time ] [ LF %s"Not Before: " not-before ] [ '
         'LF %s"Request ID: " request-id ] [ LF %s"Resources:" resources ]',
-        'domain = authority',
+        "domain = authority",
         'address = "0x" 40HEXDIG',
         'statement = *( reserved / unreserved / " " )',
-        'uri = URI',
+        "uri = URI",
         'version = "1"',
-        'nonce = 8*( ALPHA / DIGIT )',
-        'issued-at = date-time',
-        'expiration-time = date-time',
-        'not-before = date-time',
-        'request-id = *pchar',
-        'chain-id = 1*DIGIT',
-        'resources = *( LF resource )',
+        "nonce = 8*( ALPHA / DIGIT )",
+        "issued-at = date-time",
+        "expiration-time = date-time",
+        "not-before = date-time",
+        "request-id = *pchar",
+        "chain-id = 1*DIGIT",
+        "resources = *( LF resource )",
         'resource = "- " URI',
     ]

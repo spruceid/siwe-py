@@ -5,15 +5,14 @@ from .grammars import eip4361
 
 
 class RegExpParsedMessage:
-
     def __init__(self, message: str):
         expr = re.compile(REGEX_MESSAGE)
         match = re.match(REGEX_MESSAGE, message)
 
         if not match:
-            raise Exception("Message did not match the regular expression.");
+            raise Exception("Message did not match the regular expression.")
 
-        self.match = match;
+        self.match = match
         self.domain = match.group(expr.groupindex["domain"])
         self.address = match.group(expr.groupindex["address"])
         self.statement = match.group(expr.groupindex["statement"])
@@ -31,18 +30,31 @@ class RegExpParsedMessage:
 
 
 class ABNFParsedMessage:
-
     def __init__(self, message: str):
         parser = eip4361.Rule("sign-in-with-ethereum")
         node = parser.parse_all(message)
 
         for child in node.children:
-            if child.name in ["domain", "address", "statement", "uri", "version", "nonce", "chain-id", "issued-at",
-                              "expiration-time", "not-before", "request-id", "resources"]:
+            if child.name in [
+                "domain",
+                "address",
+                "statement",
+                "uri",
+                "version",
+                "nonce",
+                "chain-id",
+                "issued-at",
+                "expiration-time",
+                "not-before",
+                "request-id",
+                "resources",
+            ]:
                 setattr(self, child.name.replace("-", "_"), child.value)
 
             if child.name == "resources":
                 resources = []
                 for resource in child.children:
-                    resources.extend([r.value for r in resource.children if r.name == "uri"])
+                    resources.extend(
+                        [r.value for r in resource.children if r.name == "uri"]
+                    )
                 setattr(self, "resources", resources)

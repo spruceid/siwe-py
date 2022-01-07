@@ -6,28 +6,40 @@ from siwe.siwe import SiweMessage
 
 class MessageGeneration(unittest.TestCase):
     def test_valid_message(self):
-        with open('tests/data/parsing_positive.json', 'r') as f:
+        with open("tests/data/parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
             siwe_message = SiweMessage(message=value["fields"])
-            self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
+            self.assertEqual(
+                siwe_message.to_message(),
+                value["message"],
+                f"'{value['message']}' message incorrect.",
+            )
 
     def test_regex_parsing_valid_message(self):
-        with open('tests/data/parsing_positive.json', 'r') as f:
+        with open("tests/data/parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
             siwe_message = SiweMessage(message=value["message"], abnf=False)
-            self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
+            self.assertEqual(
+                siwe_message.to_message(),
+                value["message"],
+                f"'{value['message']}' message incorrect.",
+            )
 
     def test_abnf_parsing_valid_message(self):
-        with open('tests/data/parsing_positive.json', 'r') as f:
+        with open("tests/data/parsing_positive.json", "r") as f:
             data = json.load(fp=f)
 
         for desc, value in data.items():
             siwe_message = SiweMessage(message=value["message"])
-            self.assertEqual(siwe_message.to_message(), value["message"], f"'{value['message']}' message incorrect.")
+            self.assertEqual(
+                siwe_message.to_message(),
+                value["message"],
+                f"'{value['message']}' message incorrect.",
+            )
 
     def test_invalid_message(self):
         # TODO: Add Invalid message tests for catching exceptions
@@ -47,5 +59,5 @@ class MessageRoundTrip(unittest.TestCase):
         self.assertTrue(False, "Validation not yet implemented.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
