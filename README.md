@@ -67,6 +67,10 @@ except SiweError.INVALID_SIGNATURE:
 # Message has been validated. Authentication complete. Continue with authorization/other.
 ```
 
+## TODOs
+
+- Support for contract wallets.
+
 ## See Also
 
 - [Sign-In with Ethereum: TypeScript](https://github.com/spruceid/siwe)
