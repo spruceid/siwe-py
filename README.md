@@ -6,7 +6,7 @@ This package provides a Python implementation of EIP-4631: Sign In With Ethereum
 
 SIWE can be easily installed in any Python project with pip:
 
-``` toml
+```bash
 pip install siwe
 ```
 
