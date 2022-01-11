@@ -1,6 +1,7 @@
-import datetime
+from datetime import datetime
 import secrets
-from dateutil import parser
+from dateutil.parser import isoparse
+from dateutil.tz import UTC
 from enum import Enum
 from typing import Optional, List, Union
 import eth_utils
@@ -17,16 +18,21 @@ class SignatureType(Enum):
     PERSONAL_SIGNATURE = ("Personal signature",)  # EIP-191 signature scheme
 
 
-class SiweError(Enum):
-    """Messages thrown by operations defined by the SiweMessage class"""
+class ValidationError(Exception):
+    pass
 
-    INVALID_SIGNATURE = (
-        "Invalid signature.",
-    )  # validate() cannot verify the signature.
-    EXPIRED_MESSAGE = (
-        "Expired message.",
-    )  # expiration_time exists and is in the past.
-    MALFORMED_SESSION = ("Malformed session.",)  # Missing required field.
+
+class InvalidSignature(ValidationError):
+    pass
+
+
+class ExpiredMessage(ValidationError):
+    pass
+
+
+class MalformedSession(ValidationError):
+    def __init__(self, missing_fields):
+        self.missing_fields = missing_fields
 
 
 class SiweMessage:
@@ -60,9 +66,10 @@ class SiweMessage:
         str
     ] = None  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message is no longer valid.
+    expiration_time_parsed: Optional[datetime] = None
 
     not_before: Optional[
-        str
+        datetime
     ] = None  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message will become valid.
 
@@ -85,14 +92,20 @@ class SiweMessage:
     def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
         if isinstance(message, str):
             if abnf:
-                for k, v in ABNFParsedMessage(message=message).__dict__.items():
-                    setattr(self, k, v)
+                parsed_message = ABNFParsedMessage(message=message)
             else:
-                for k, v in RegExpParsedMessage(message=message).__dict__.items():
-                    setattr(self, k, v)
+                parsed_message = RegExpParsedMessage(message=message)
+            message_dict = parsed_message.__dict__
         elif isinstance(message, dict):
-            for k, v in message.items():
-                setattr(self, k, v)
+            message_dict = message
+        else:
+            raise TypeError
+        for k, v in message_dict.items():
+            if k == "expiration_time" and v is not None:
+                self.expiration_time_parsed = isoparse(v)
+            elif k == "not_before" and v is not None:
+                self.not_before_parsed = isoparse(v)
+            setattr(self, k, v)
 
     def to_message(self) -> str:
         """
@@ -121,7 +134,7 @@ class SiweMessage:
 
         if self.issued_at is None:
             # TODO: Should we default to UTC or settle for local time? UX may be better for local
-            self.issued_at = datetime.datetime.now().astimezone().isoformat()
+            self.issued_at = datetime.now().astimezone().isoformat()
 
         issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
@@ -163,7 +176,7 @@ class SiweMessage:
             message = self.to_message()
         return message
 
-    def validate(self, provider: Optional[HTTPProvider] = None) -> bool:
+    def validate(self, provider: Optional[HTTPProvider] = None) -> None:
         """
         Validates the integrity of fields of this SiweMessage object by matching its signature.
 
@@ -176,37 +189,32 @@ class SiweMessage:
 
         missing = []
         if message is None:
-            missing.append("`message`")
+            missing.append("message")
 
         if self.signature is None:
-            missing.append("``signature")
+            missing.append("signature")
 
         if self.address is None:
-            missing.append("`address`")
+            missing.append("address")
 
         if len(missing) > 0:
-            # TODO: Add error context
-            raise SiweError.MALFORMED_SESSION
+            raise MalformedSession(missing)
 
         try:
             address = w3.eth.account.recover_message(message, signature=self.signature)
         except eth_utils.exceptions.ValidationError:
-            return False
+            raise InvalidSignature
 
         if address != self.address:
-            raise SiweError.INVALID_SIGNATURE
+            raise InvalidSignature
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
 
-        parsed_message = SiweMessage(message=message)
-        # TODO: Remove external date parsing dependency in favor of native libs
-        if parsed_message.expiration_time and datetime.datetime.now() >= parser.parse(
-            self.expiration_time
+        if (
+            self.expiration_time_parsed is not None
+            and datetime.now(UTC) >= self.expiration_time_parsed
         ):
-            # TODO: Add error context
-            raise SiweError.EXPIRED_MESSAGE
-
-        return True
+            raise ExpiredMessage
 
 
 def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider):

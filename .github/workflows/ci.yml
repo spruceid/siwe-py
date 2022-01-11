@@ -24,3 +24,5 @@ jobs:
         run: poetry run pytest -v
       - name: Fmt
         run: poetry run black . --check
+      - name: Flake8
+        run: poetry run flake8
