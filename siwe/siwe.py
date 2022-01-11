@@ -193,10 +193,10 @@ class SiweMessage:
         except eth_utils.exceptions.ValidationError:
             return False
 
-        # if address != self.address:
+        if address != self.address:
+            raise SiweError.INVALID_SIGNATURE
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
-        #         raise SiweError.INVALID_SIGNATURE
 
         parsed_message = SiweMessage(message=message)
         # TODO: Remove external date parsing dependency in favor of native libs
