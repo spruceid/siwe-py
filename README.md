@@ -77,3 +77,9 @@ except SiweError.INVALID_SIGNATURE:
 - [Example SIWE application: login.xyz](https://login.xyz)
 - [EIP-4361 Specification Draft](https://eips.ethereum.org/EIPS/eip-4361)
 - [EIP-191 Specification](https://eips.ethereum.org/EIPS/eip-191)
+
+## Disclaimer
+
+Our Python library for Sign-In with Ethereum has not yet undergone a formal
+security audit. We welcome continued feedback on the usability, architecture,
+and security of this implementation.
