@@ -4,7 +4,7 @@ from humps import decamelize
 from eth_account import Account, messages
 
 
-from siwe.siwe import SiweMessage
+from siwe.siwe import SiweMessage, ValidationError
 
 BASE_TESTS = "tests/siwe/test/"
 with open(BASE_TESTS + "parsing_positive.json", "r") as f:
@@ -62,7 +62,7 @@ class TestMessageValidation:
         [(test_name, test) for test_name, test in validation_negative.items()],
     )
     def test_invalid_message(self, test_name, test):
-        with pytest.raises(Exception):
+        with pytest.raises((ValidationError, ValueError)):
             siwe_message = SiweMessage(message=test)
             siwe_message.validate()
 
