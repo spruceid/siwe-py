@@ -4,7 +4,7 @@ from humps import decamelize
 from eth_account import Account, messages
 
 
-from siwe.siwe import SiweMessage
+from siwe.siwe import SiweMessage, ValidationError
 
 BASE_TESTS = "tests/siwe/test/"
 with open(BASE_TESTS + "parsing_positive.json", "r") as f:
@@ -48,21 +48,23 @@ class TestMessageGeneration:
 
 
 class TestMessageValidation:
+    @pytest.mark.xfail  # It is expired.
     @pytest.mark.parametrize(
         "test_name,test",
         [(test_name, test) for test_name, test in validation_positive.items()],
     )
     def test_valid_message(self, test_name, test):
         siwe_message = SiweMessage(message=test)
-        siwe_message.validate() == True
+        siwe_message.validate()
 
     @pytest.mark.parametrize(
         "test_name,test",
         [(test_name, test) for test_name, test in validation_negative.items()],
     )
     def test_invalid_message(self, test_name, test):
-        siwe_message = SiweMessage(message=test)
-        siwe_message.validate() == False
+        with pytest.raises((ValidationError, ValueError)):
+            siwe_message = SiweMessage(message=test)
+            siwe_message.validate()
 
 
 class TestMessageRoundTrip:

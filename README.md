@@ -33,9 +33,9 @@ message: SiweMessage = SiweMessage(message={"domain": "login.xyz", "address": "0
 Verification and authentication is performed via EIP-191, using the `address` field of the `SiweMessage` as the expected signer. The validate method checks message structural integrity, signature address validity, and time-based validity attributes. 
 
 ``` python
-if message.validate():
-    # Valid
-else:
+try:
+    message.validate()
+except siwe.ValidationError:
     # Invalid
 ```
 
@@ -52,16 +52,18 @@ print(message.sign_message())
 Parsing and verifying a `SiweMessage` is easy:
 
 ``` python
-message: SiweMessage = SiweMessage(message=eip_4361_string)
-
 try:
-    if not message.validate():
-        # Authentication attempt rejected.
-except SiweError.EXPIRED_MESSAGE:
+    message: SiweMessage = SiweMessage(message=eip_4361_string)
+    message.validate():
+except siwe.ValueError:
+    # Invalid message
     # Authentication attempt rejected.
-except SiweError.MALFORMED_SESSION:
+except siwe.ExpiredMessage:
     # Authentication attempt rejected.
-except SiweError.INVALID_SIGNATURE:
+except siwe.MalformedSession as e:
+    # e.missing_fields contains the missing information needed for validation
+    # Authentication attempt rejected.
+except siwe.InvalidSignature:
     # Authentication attempt rejected.
     
 # Message has been validated. Authentication complete. Continue with authorization/other.
