@@ -1,4 +1,5 @@
 from datetime import datetime
+import string
 import secrets
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
@@ -58,7 +59,9 @@ class SiweMessage:
     chain_id: str  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be
     # resolved.
 
-    nonce: str  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
+    nonce: Optional[
+        str
+    ] = None  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
 
     issued_at: str  # ISO 8601 datetime string of the current time.
 
@@ -230,5 +233,8 @@ def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider
     )
 
 
+alphanumerics = string.ascii_letters + string.digits
+
+
 def generate_nonce() -> str:
-    return secrets.token_hex(12)
+    return "".join(secrets.choice(alphanumerics) for _ in range(11))
