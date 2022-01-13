@@ -1,4 +1,5 @@
 from datetime import datetime
+import string
 import secrets
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
@@ -230,5 +231,12 @@ def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider
     )
 
 
+alphanumerics = list(string.ascii_uppercase + string.ascii_lowercase + string.digits)
+system_random = secrets.SystemRandom()
+
+
 def generate_nonce() -> str:
-    return secrets.token_hex(12)
+    n = ''
+    for i in range(11):
+        n += system_random.choice(alphanumerics)
+    return n
