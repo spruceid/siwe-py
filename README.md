@@ -57,14 +57,14 @@ try:
     message.validate():
 except siwe.ValueError:
     # Invalid message
-    # Authentication attempt rejected.
+    print("Authentication attempt rejected.")
 except siwe.ExpiredMessage:
-    # Authentication attempt rejected.
+    print("Authentication attempt rejected.")
 except siwe.MalformedSession as e:
     # e.missing_fields contains the missing information needed for validation
-    # Authentication attempt rejected.
+    print("Authentication attempt rejected.")
 except siwe.InvalidSignature:
-    # Authentication attempt rejected.
+    print("Authentication attempt rejected.")
     
 # Message has been validated. Authentication complete. Continue with authorization/other.
 ```
