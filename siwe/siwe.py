@@ -10,6 +10,7 @@ import eth_utils
 from web3 import Web3, HTTPProvider
 import eth_account.messages
 
+from .defs import VALID_FIELDS
 from .parsed import RegExpParsedMessage, ABNFParsedMessage
 
 
@@ -108,7 +109,8 @@ class SiweMessage:
                 self.expiration_time_parsed = isoparse(v)
             elif k == "not_before" and v is not None:
                 self.not_before_parsed = isoparse(v)
-            setattr(self, k, v)
+            if k in VALID_FIELDS:
+                setattr(self, k, v)
 
     def to_message(self) -> str:
         """
