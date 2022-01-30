@@ -8,8 +8,12 @@ from typing import Optional, List, Union
 import eth_utils
 
 from web3 import Web3, HTTPProvider
-import eth_account.messages
+from eth_account.messages import (
+    encode_defunct,
+    _hash_eip191_message,
+)
 
+from .defs import ERC1271_ABI, ERC1271_MAGIC_VALUE
 from .parsed import RegExpParsedMessage, ABNFParsedMessage
 
 
@@ -187,7 +191,7 @@ class SiweMessage:
         Contract Wallets that implement EIP-1271 is needed.
         :return: True if the message is valid and false otherwise
         """
-        message = eth_account.messages.encode_defunct(text=self.sign_message())
+        message = encode_defunct(text=self.sign_message())
         w3 = Web3(provider=provider)
 
         missing = []
@@ -228,9 +232,15 @@ def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider
     :param provider: A Web3 provider able to perform a contract check.
     :return: True if the signature is valid per EIP-1271.
     """
-    raise NotImplementedError(
-        "siwe does not yet support EIP-1271 method signature verification."
+    w3 = Web3(provider)
+    contract = w3.eth.contract(
+        address=w3.toChecksumAddress(message.address.lower()), abi=ERC1271_ABI
     )
+    magic_value = contract.functions.isValidSignature(
+        _hash=_hash_eip191_message(message.to_message()),
+        _signature=message.signature,
+    ).call()
+    return magic_value == ERC1271_MAGIC_VALUE
 
 
 alphanumerics = string.ascii_letters + string.digits
