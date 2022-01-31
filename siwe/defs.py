@@ -13,20 +13,3 @@ NOT_BEFORE = f"(\\nNot Before: (?P<notBefore>{DATETIME}))?"
 REQUEST_ID = "(\\nRequest ID: (?P<requestId>[-._~!$&'()*+,;=:@%a-zA-Z0-9]*))?"
 RESOURCES = f"(\\nResources:(?P<resources>(\\n- {URI}?)+))?"
 REGEX_MESSAGE = f"^{DOMAIN}{ADDRESS}{STATEMENT}{URI_LINE}{VERSION}{CHAIN_ID}{NONCE}{ISSUED_AT}{EXPIRATION_TIME}{NOT_BEFORE}{REQUEST_ID}{RESOURCES}$"
-VALID_FIELDS = [
-    "domain",
-    "address",
-    "statement",
-    "uri",
-    "version",
-    "chain_id",
-    "nonce",
-    "issued_at",
-    "expiration_time",
-    "expiration_time_parsed",
-    "not_before",
-    "request_id",
-    "resources",
-    "signature",
-    "signature_type",
-]
