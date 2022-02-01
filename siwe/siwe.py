@@ -102,6 +102,7 @@ class SiweMessage:
         "expiration_time",
         "expiration_time_parsed",
         "not_before",
+        "not_before_parsed",
         "request_id",
         "resources",
         "signature",
