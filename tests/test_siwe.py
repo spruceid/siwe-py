@@ -44,18 +44,17 @@ class TestMessageGeneration:
     )
     def test_valid_message(self, test_name, test):
         siwe_message = SiweMessage(message=test["fields"])
-        assert siwe_message.to_message() == test["message"]
+        assert siwe_message.prepare_message() == test["message"]
 
 
 class TestMessageValidation:
-    @pytest.mark.xfail  # It is expired.
     @pytest.mark.parametrize(
         "test_name,test",
         [(test_name, test) for test_name, test in validation_positive.items()],
     )
     def test_valid_message(self, test_name, test):
         siwe_message = SiweMessage(message=test)
-        siwe_message.validate()
+        siwe_message.validate(test["signature"])
 
     @pytest.mark.parametrize(
         "test_name,test",
@@ -64,7 +63,7 @@ class TestMessageValidation:
     def test_invalid_message(self, test_name, test):
         with pytest.raises((ValidationError, ValueError)):
             siwe_message = SiweMessage(message=test)
-            siwe_message.validate()
+            siwe_message.validate(test["signature"])
 
 
 class TestMessageRoundTrip:
@@ -77,7 +76,7 @@ class TestMessageRoundTrip:
     def test_message_round_trip(self, test_name, test):
         message = SiweMessage(test["fields"])
         message.address = self.account.address
-        message.signature = self.account.sign_message(
-            messages.encode_defunct(text=message.to_message())
+        signature = self.account.sign_message(
+            messages.encode_defunct(text=message.prepare_message())
         ).signature
-        message.validate()
+        message.validate(signature)

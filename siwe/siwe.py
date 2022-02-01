@@ -3,20 +3,14 @@ import string
 import secrets
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from enum import Enum
 from typing import Optional, List, Union
-import eth_utils
+import warnings
 
+import eth_utils
 from web3 import Web3, HTTPProvider
 import eth_account.messages
 
 from .parsed import RegExpParsedMessage, ABNFParsedMessage
-
-
-class SignatureType(Enum):
-    """Types of signatures supported by this library"""
-
-    PERSONAL_SIGNATURE = ("Personal signature",)  # EIP-191 signature scheme
 
 
 class ValidationError(Exception):
@@ -56,7 +50,7 @@ class SiweMessage:
 
     version: str  # Current version of the message.
 
-    chain_id: str  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be
+    chain_id: int  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be
     # resolved.
 
     nonce: Optional[
@@ -86,10 +80,6 @@ class SiweMessage:
     ]  # List of information or references to information the user wishes to have
     # resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
-    signature: Optional[str]  # Signature of the message signed by the wallet.
-
-    signature_type: SignatureType  # Type of sign message to be generated.
-
     __slots__ = (
         "domain",
         "address",
@@ -105,8 +95,6 @@ class SiweMessage:
         "not_before_parsed",
         "request_id",
         "resources",
-        "signature",
-        "signature_type",
     )
 
     def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
@@ -129,7 +117,7 @@ class SiweMessage:
                 self.not_before_parsed = isoparse(value)
             setattr(self, key, value)
 
-    def to_message(self) -> str:
+    def prepare_message(self) -> str:
         """
         Retrieve an EIP-4361 formatted message for signature. It is recommended to instead use
         sign_message() which will resolve to the correct method based on the [type] attribute
@@ -186,19 +174,17 @@ class SiweMessage:
 
         return "\n\n".join([prefix, suffix])
 
+    def to_message(self) -> str:
+        warnings.warn("deprecated", DeprecationWarning)
+        return self.prepare_message()
+
     def sign_message(self) -> str:
-        """
-        Parses all fields in the object and creates a sign message according to the type defined.
+        warnings.warn("deprecated", DeprecationWarning)
+        return self.prepare_message()
 
-        :return: a message ready to be signed according to the type defined in the object.
-        """
-        if self.signature_type is SignatureType.PERSONAL_SIGNATURE:
-            message = self.to_message()
-        else:
-            message = self.to_message()
-        return message
-
-    def validate(self, provider: Optional[HTTPProvider] = None) -> None:
+    def validate(
+        self, signature: str, *, provider: Optional[HTTPProvider] = None
+    ) -> None:
         """
         Validates the integrity of fields of this SiweMessage object by matching its signature.
 
@@ -206,15 +192,12 @@ class SiweMessage:
         Contract Wallets that implement EIP-1271 is needed.
         :return: True if the message is valid and false otherwise
         """
-        message = eth_account.messages.encode_defunct(text=self.sign_message())
+        message = eth_account.messages.encode_defunct(text=self.prepare_message())
         w3 = Web3(provider=provider)
 
         missing = []
         if message is None:
             missing.append("message")
-
-        if self.signature is None:
-            missing.append("signature")
 
         if self.address is None:
             missing.append("address")
@@ -223,7 +206,7 @@ class SiweMessage:
             raise MalformedSession(missing)
 
         try:
-            address = w3.eth.account.recover_message(message, signature=self.signature)
+            address = w3.eth.account.recover_message(message, signature=signature)
         except eth_utils.exceptions.ValidationError:
             raise InvalidSignature
 
@@ -239,7 +222,7 @@ class SiweMessage:
             raise ExpiredMessage
 
 
-def check_contract_wallet_signature(message: SiweMessage, provider: HTTPProvider):
+def check_contract_wallet_signature(message: SiweMessage, *, provider: HTTPProvider):
     """
     Calls the EIP-1271 method for Smart Contract wallets,
 
