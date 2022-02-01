@@ -54,7 +54,7 @@ class TestMessageValidation:
     )
     def test_valid_message(self, test_name, test):
         siwe_message = SiweMessage(message=test)
-        siwe_message.validate(test['signature'])
+        siwe_message.validate(test["signature"])
 
     @pytest.mark.parametrize(
         "test_name,test",
@@ -63,7 +63,7 @@ class TestMessageValidation:
     def test_invalid_message(self, test_name, test):
         with pytest.raises((ValidationError, ValueError)):
             siwe_message = SiweMessage(message=test)
-            siwe_message.validate(test['signature'])
+            siwe_message.validate(test["signature"])
 
 
 class TestMessageRoundTrip:
