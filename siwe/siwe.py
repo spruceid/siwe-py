@@ -49,7 +49,7 @@ class SiweMessage:
 
     statement: Optional[
         str
-    ] = None  # Human-readable ASCII assertion that the user will sign, and it must not
+    ]  # Human-readable ASCII assertion that the user will sign, and it must not
     # contain `\n`.
 
     uri: str  # RFC 3986 URI referring to the resource that is the subject of the signing.
@@ -61,36 +61,53 @@ class SiweMessage:
 
     nonce: Optional[
         str
-    ] = None  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
+    ]  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
 
     issued_at: str  # ISO 8601 datetime string of the current time.
 
     expiration_time: Optional[
         str
-    ] = None  # ISO 8601 datetime string that, if present, indicates when the signed
+    ]  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message is no longer valid.
-    expiration_time_parsed: Optional[datetime] = None
+    expiration_time_parsed: Optional[datetime]
 
     not_before: Optional[
         datetime
-    ] = None  # ISO 8601 datetime string that, if present, indicates when the signed
+    ]  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message will become valid.
 
     request_id: Optional[
         str
-    ] = None  # System-specific identifier that may be used to uniquely refer to the sign-in
+    ]  # System-specific identifier that may be used to uniquely refer to the sign-in
     # request.
 
     resources: Optional[
         List[str]
-    ] = None  # List of information or references to information the user wishes to have
+    ]  # List of information or references to information the user wishes to have
     # resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
-    signature: Optional[str] = None  # Signature of the message signed by the wallet.
+    signature: Optional[str]  # Signature of the message signed by the wallet.
 
-    signature_type: SignatureType = (
-        SignatureType.PERSONAL_SIGNATURE
-    )  # Type of sign message to be generated.
+    signature_type: SignatureType  # Type of sign message to be generated.
+
+    __slots__ = (
+        "domain",
+        "address",
+        "statement",
+        "uri",
+        "version",
+        "chain_id",
+        "nonce",
+        "issued_at",
+        "expiration_time",
+        "expiration_time_parsed",
+        "not_before",
+        "not_before_parsed",
+        "request_id",
+        "resources",
+        "signature",
+        "signature_type",
+    )
 
     def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
         if isinstance(message, str):
@@ -103,12 +120,14 @@ class SiweMessage:
             message_dict = message
         else:
             raise TypeError
-        for k, v in message_dict.items():
-            if k == "expiration_time" and v is not None:
-                self.expiration_time_parsed = isoparse(v)
-            elif k == "not_before" and v is not None:
-                self.not_before_parsed = isoparse(v)
-            setattr(self, k, v)
+
+        for key in self.__slots__:
+            value = message_dict.get(key)
+            if key == "expiration_time" and value is not None:
+                self.expiration_time_parsed = isoparse(value)
+            elif key == "not_before" and value is not None:
+                self.not_before_parsed = isoparse(value)
+            setattr(self, key, value)
 
     def to_message(self) -> str:
         """
