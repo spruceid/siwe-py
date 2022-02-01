@@ -13,3 +13,19 @@ NOT_BEFORE = f"(\\nNot Before: (?P<notBefore>{DATETIME}))?"
 REQUEST_ID = "(\\nRequest ID: (?P<requestId>[-._~!$&'()*+,;=:@%a-zA-Z0-9]*))?"
 RESOURCES = f"(\\nResources:(?P<resources>(\\n- {URI}?)+))?"
 REGEX_MESSAGE = f"^{DOMAIN}{ADDRESS}{STATEMENT}{URI_LINE}{VERSION}{CHAIN_ID}{NONCE}{ISSUED_AT}{EXPIRATION_TIME}{NOT_BEFORE}{REQUEST_ID}{RESOURCES}$"
+ERC1271_ABI = [
+    {
+        {
+            "constant": False,
+            "inputs": [
+                {"name": "_hash", "type": "bytes32"},
+                {"name": "_signature", "type": "bytes memory"},
+            ],
+            "name": "isValidSignature",
+            "outputs": [{"name": "magicValue", "type": "bytes4"}],
+            "payable": False,
+            "type": "function",
+        }
+    }
+]
+ERC1271_MAGIC_VALUE = 0x1626BA7E
