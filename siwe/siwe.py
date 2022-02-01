@@ -3,7 +3,6 @@ import string
 import secrets
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from enum import Enum
 from typing import Optional, List, Union
 import warnings
 
