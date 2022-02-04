@@ -171,6 +171,8 @@ class SiweMessage:
 
         if self.statement:
             prefix = "\n\n".join([prefix, self.statement])
+        else:
+            prefix += "\n"
 
         return "\n\n".join([prefix, suffix])
 

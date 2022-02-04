@@ -32,7 +32,7 @@ class Rule(_Rule):
         'LF %s"Request ID: " request-id ] [ LF %s"Resources:" resources ]',
         "domain = authority",
         'address = "0x" 40HEXDIG',
-        'statement = *( reserved / unreserved / " " )',
+        'statement = 1*( reserved / unreserved / " " )',
         "uri = URI",
         'version = "1"',
         "nonce = 8*( ALPHA / DIGIT )",
