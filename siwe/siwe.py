@@ -119,9 +119,7 @@ class SiweMessage:
 
     def prepare_message(self) -> str:
         """
-        Retrieve an EIP-4361 formatted message for signature. It is recommended to instead use
-        sign_message() which will resolve to the correct method based on the [type] attribute
-        of this object, in case of other formats being implemented.
+        Retrieve an EIP-4361 formatted message for signature.
 
         :return: EIP-4361 formatted message, ready for EIP-191 signing.
         """
@@ -177,11 +175,11 @@ class SiweMessage:
         return "\n\n".join([prefix, suffix])
 
     def to_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
+        warnings.warn("deprecated, use prepare_message()", DeprecationWarning)
         return self.prepare_message()
 
     def sign_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
+        warnings.warn("deprecated, use prepare_message", DeprecationWarning)
         return self.prepare_message()
 
     def validate(
