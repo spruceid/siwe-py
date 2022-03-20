@@ -210,10 +210,10 @@ class SiweMessage:
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
         except eth_utils.exceptions.ValidationError:
-            raise InvalidSignature
+            raise InvalidSignature("Failed to recover public key from signature")
 
         if address != self.address:
-            raise InvalidSignature
+            raise InvalidSignature("Signer address must match message address")
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
 
