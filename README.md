@@ -69,6 +69,18 @@ except siwe.InvalidSignature:
 # Message has been validated. Authentication complete. Continue with authorization/other.
 ```
 
+## Testing
+
+```bash
+# activate a virtualenv, your choice of how to do so
+pyenv virtualenv siwe 
+pyenv activate siwe
+# get dependencies and test
+poetry install
+git submodule update --init --recursive
+pytest .
+```
+
 ## TODOs
 
 - Support for contract wallets.
