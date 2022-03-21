@@ -73,8 +73,6 @@ except siwe.InvalidSignature:
 
 ```bash
 # activate a virtualenv, your choice of how to do so
-pyenv virtualenv siwe 
-pyenv activate siwe
 # get dependencies and test
 poetry install
 git submodule update --init --recursive

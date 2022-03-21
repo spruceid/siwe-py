@@ -190,7 +190,7 @@ class SiweMessage:
 
         :param provider: A Web3 provider able to perform a contract check, this is required if support for Smart
         Contract Wallets that implement EIP-1271 is needed.
-        :return: True if the message is valid and false otherwise
+        :return: raises an appropriate Exception if there is a problem validating, otherwise None
         """
         message = eth_account.messages.encode_defunct(text=self.prepare_message())
         w3 = Web3(provider=provider)
@@ -208,10 +208,10 @@ class SiweMessage:
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
         except eth_utils.exceptions.ValidationError:
-            raise InvalidSignature("Failed to recover public key from signature")
+            raise InvalidSignature("Message or signature are malformed")
 
         if address != self.address:
-            raise InvalidSignature("Signer address must match message address")
+            raise InvalidSignature("Recovered address does not match message address")
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
 
