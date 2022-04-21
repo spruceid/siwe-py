@@ -212,14 +212,6 @@ class SiweMessage:
     def get_not_before(self) -> Optional[datetime]:
         return isoparse(self.not_before) if self.not_before is not None else None
 
-    def to_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
-        return self.prepare_message()
-
-    def sign_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
-        return self.prepare_message()
-
     def verify(
         self, signature: str, *, 
         domain: Optional[str] = None,
@@ -250,7 +242,7 @@ class SiweMessage:
         if domain is not None and self.domain != domain:
             raise DomainMismatch
 
-        if nonce is not None and self.nonce != domain:
+        if nonce is not None and self.nonce != nonce:
             raise NonceMismatch
 
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
