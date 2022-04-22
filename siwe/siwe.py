@@ -121,7 +121,13 @@ class SiweMessage:
         for key in self.__slots__:
             value = message_dict.get(key)
 
-            if key == "domain" and value == "":
+            if key == "issued_at" and value is not None:
+                isoparse(value)
+            elif key == "expiration_time" and value is not None:
+                isoparse(value)
+            elif key == "not_before" and value is not None:
+                isoparse(value)
+            elif key == "domain" and value == "":
                 raise ValueError("Message `domain` must not be empty")
             elif key == "address" and value is not None:
                 if not eth_utils.is_checksum_formatted_address(value):
