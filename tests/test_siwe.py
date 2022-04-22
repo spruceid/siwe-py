@@ -68,10 +68,12 @@ class TestMessageVerification:
             domain_binding = test.get("domain_binding")
             match_nonce = test.get("match_nonce")
             timestamp = isoparse(test["time"]) if "time" in test else None
-            siwe_message.verify(test["signature"],
+            siwe_message.verify(
+                test["signature"],
                 domain=domain_binding,
                 nonce=match_nonce,
-                timestamp=timestamp)
+                timestamp=timestamp,
+            )
 
 
 class TestMessageRoundTrip:

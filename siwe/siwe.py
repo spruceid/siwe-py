@@ -134,16 +134,15 @@ class SiweMessage:
                     raise ValueError("Message `address` must be in EIP-55 format")
             elif key == "uri" and value is not None:
                 try:
-                    rfc3987.parse(value, rule='URI')
+                    rfc3987.parse(value, rule="URI")
                 except ValueError:
                     raise ValueError("Invalid format for field `uri`")
             elif key == "resources" and value is not None:
                 for url in value:
                     try:
-                        rfc3987.parse(url, rule='URI')
+                        rfc3987.parse(url, rule="URI")
                     except ValueError:
                         raise ValueError("Invalid format for field `resources`")
-
 
             setattr(self, key, value)
 
@@ -213,17 +212,21 @@ class SiweMessage:
         return "\n\n".join([prefix, suffix])
 
     def get_expiration_time(self) -> Optional[datetime]:
-        return isoparse(self.expiration_time) if self.expiration_time is not None else None
+        return (
+            isoparse(self.expiration_time) if self.expiration_time is not None else None
+        )
 
     def get_not_before(self) -> Optional[datetime]:
         return isoparse(self.not_before) if self.not_before is not None else None
 
     def verify(
-        self, signature: str, *, 
+        self,
+        signature: str,
+        *,
         domain: Optional[str] = None,
         nonce: Optional[str] = None,
         timestamp: Optional[datetime] = None,
-        provider: Optional[HTTPProvider] = None
+        provider: Optional[HTTPProvider] = None,
     ) -> None:
         """
         Validates the integrity of fields of this SiweMessage object by matching its signature.
@@ -254,11 +257,11 @@ class SiweMessage:
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
 
         expiration_time = self.get_expiration_time()
-        if (expiration_time is not None and verification_time >= expiration_time):
+        if expiration_time is not None and verification_time >= expiration_time:
             raise ExpiredMessage
 
         not_before = self.get_not_before()
-        if (not_before is not None and verification_time <= not_before):
+        if not_before is not None and verification_time <= not_before:
             raise NotYetValidMessage
 
         try:
@@ -270,6 +273,7 @@ class SiweMessage:
             raise InvalidSignature
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
+
 
 def check_contract_wallet_signature(message: SiweMessage, *, provider: HTTPProvider):
     """
