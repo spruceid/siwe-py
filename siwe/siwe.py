@@ -146,12 +146,6 @@ class SiweMessage:
 
             setattr(self, key, value)
 
-    def __str__(self):
-        return self.prepare_message()
-
-    def __unicode__(self):
-        return self.prepare_message()
-
     def prepare_message(self) -> str:
         """
         Retrieve an EIP-4361 formatted message for signature. It is recommended to instead use
