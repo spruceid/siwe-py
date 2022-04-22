@@ -5,7 +5,6 @@ import rfc3987
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from typing import Optional, List, Union
-import warnings
 
 import eth_utils
 from web3 import Web3, HTTPProvider
