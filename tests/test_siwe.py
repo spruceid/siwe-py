@@ -26,7 +26,8 @@ class TestMessageParsing:
     )
     def test_valid_message(self, abnf, test_name, test):
         siwe_message = SiweMessage(message=test["message"], abnf=abnf)
-        assert test["fields"] == siwe_message
+        for key, value in test["fields"].items():
+            assert getattr(siwe_message, key) == value
 
     @pytest.mark.parametrize("abnf", [True, False])
     @pytest.mark.parametrize(
