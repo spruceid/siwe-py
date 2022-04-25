@@ -122,7 +122,7 @@ class SiweMessage:
 
             if key == "chain_id" and value is not None and type(value) is not int:
                 value = int(value)
-            if key == "issued_at" and value is not None:
+            elif key == "issued_at" and value is not None:
                 isoparse(value)
             elif key == "expiration_time" and value is not None:
                 isoparse(value)
