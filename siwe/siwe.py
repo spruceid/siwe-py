@@ -1,10 +1,10 @@
 from datetime import datetime
 import string
 import secrets
+import rfc3987
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from typing import Optional, List, Union
-import warnings
 
 import eth_utils
 from web3 import Web3, HTTPProvider
@@ -13,19 +13,31 @@ import eth_account.messages
 from .parsed import RegExpParsedMessage, ABNFParsedMessage
 
 
-class ValidationError(Exception):
+class VerificationError(Exception):
     pass
 
 
-class InvalidSignature(ValidationError):
+class InvalidSignature(VerificationError):
     pass
 
 
-class ExpiredMessage(ValidationError):
+class ExpiredMessage(VerificationError):
     pass
 
 
-class MalformedSession(ValidationError):
+class NotYetValidMessage(VerificationError):
+    pass
+
+
+class DomainMismatch(VerificationError):
+    pass
+
+
+class NonceMismatch(VerificationError):
+    pass
+
+
+class MalformedSession(VerificationError):
     def __init__(self, missing_fields):
         self.missing_fields = missing_fields
 
@@ -63,10 +75,9 @@ class SiweMessage:
         str
     ]  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message is no longer valid.
-    expiration_time_parsed: Optional[datetime]
 
     not_before: Optional[
-        datetime
+        str
     ]  # ISO 8601 datetime string that, if present, indicates when the signed
     # authentication message will become valid.
 
@@ -85,14 +96,12 @@ class SiweMessage:
         "address",
         "statement",
         "uri",
-        "version",
         "chain_id",
+        "version",
         "nonce",
         "issued_at",
         "expiration_time",
-        "expiration_time_parsed",
         "not_before",
-        "not_before_parsed",
         "request_id",
         "resources",
     )
@@ -108,13 +117,34 @@ class SiweMessage:
             message_dict = message
         else:
             raise TypeError
-
         for key in self.__slots__:
             value = message_dict.get(key)
-            if key == "expiration_time" and value is not None:
-                self.expiration_time_parsed = isoparse(value)
+
+            if key == "chain_id" and value is not None and type(value) is not int:
+                value = int(value)
+            elif key == "issued_at" and value is not None:
+                isoparse(value)
+            elif key == "expiration_time" and value is not None:
+                isoparse(value)
             elif key == "not_before" and value is not None:
-                self.not_before_parsed = isoparse(value)
+                isoparse(value)
+            elif key == "domain" and value == "":
+                raise ValueError("Message `domain` must not be empty")
+            elif key == "address" and value is not None:
+                if not eth_utils.is_checksum_formatted_address(value):
+                    raise ValueError("Message `address` must be in EIP-55 format")
+            elif key == "uri" and value is not None:
+                try:
+                    rfc3987.parse(value, rule="URI")
+                except ValueError:
+                    raise ValueError("Invalid format for field `uri`")
+            elif key == "resources" and value is not None:
+                for url in value:
+                    try:
+                        rfc3987.parse(url, rule="URI")
+                    except ValueError:
+                        raise ValueError("Invalid format for field `resources`")
+
             setattr(self, key, value)
 
     def prepare_message(self) -> str:
@@ -176,16 +206,22 @@ class SiweMessage:
 
         return "\n\n".join([prefix, suffix])
 
-    def to_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
-        return self.prepare_message()
+    def get_expiration_time(self) -> Optional[datetime]:
+        return (
+            isoparse(self.expiration_time) if self.expiration_time is not None else None
+        )
 
-    def sign_message(self) -> str:
-        warnings.warn("deprecated", DeprecationWarning)
-        return self.prepare_message()
+    def get_not_before(self) -> Optional[datetime]:
+        return isoparse(self.not_before) if self.not_before is not None else None
 
-    def validate(
-        self, signature: str, *, provider: Optional[HTTPProvider] = None
+    def verify(
+        self,
+        signature: str,
+        *,
+        domain: Optional[str] = None,
+        nonce: Optional[str] = None,
+        timestamp: Optional[datetime] = None,
+        provider: Optional[HTTPProvider] = None,
     ) -> None:
         """
         Validates the integrity of fields of this SiweMessage object by matching its signature.
@@ -207,6 +243,22 @@ class SiweMessage:
         if len(missing) > 0:
             raise MalformedSession(missing)
 
+        if domain is not None and self.domain != domain:
+            raise DomainMismatch
+
+        if nonce is not None and self.nonce != nonce:
+            raise NonceMismatch
+
+        verification_time = datetime.now(UTC) if timestamp is None else timestamp
+
+        expiration_time = self.get_expiration_time()
+        if expiration_time is not None and verification_time >= expiration_time:
+            raise ExpiredMessage
+
+        not_before = self.get_not_before()
+        if not_before is not None and verification_time <= not_before:
+            raise NotYetValidMessage
+
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
         except eth_utils.exceptions.ValidationError:
@@ -216,12 +268,6 @@ class SiweMessage:
             raise InvalidSignature
         #     if not check_contract_wallet_signature(message=self, provider=provider):
         #         # TODO: Add error context
-
-        if (
-            self.expiration_time_parsed is not None
-            and datetime.now(UTC) >= self.expiration_time_parsed
-        ):
-            raise ExpiredMessage
 
 
 def check_contract_wallet_signature(message: SiweMessage, *, provider: HTTPProvider):
