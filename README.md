@@ -19,6 +19,7 @@ SIWE provides a `SiweMessage` class which implements EIP-4361.
 Parsing is done by initializing a `SiweMessage` object with an EIP-4361 formatted string:
 
 ``` python
+from siwe import SiweMessage
 message: SiweMessage = SiweMessage(message=eip_4361_string)
 ```
 
