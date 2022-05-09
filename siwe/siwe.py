@@ -106,7 +106,7 @@ class SiweMessage:
         "resources",
     )
 
-    def __init__(self, message: Union[str, dict] = None, abnf: bool = True):
+    def __init__(self, message: Union[str, dict], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
                 parsed_message = ABNFParsedMessage(message=message)
@@ -224,8 +224,13 @@ class SiweMessage:
         provider: Optional[HTTPProvider] = None,
     ) -> None:
         """
-        Validates the integrity of fields of this SiweMessage object by matching its signature.
+        Verifies the integrity of fields of this SiweMessage object by matching its signature.
 
+        :param signature: Signature to check against the current message.
+        :param domain: Domain expected to be in the current message.
+        :param nonce: Nonce expected to be in the current message.
+        :param timestamp: Timestamp used to verify the expiry date and other dates fields. Uses the current time by
+        default.
         :param provider: A Web3 provider able to perform a contract check, this is required if support for Smart
         Contract Wallets that implement EIP-1271 is needed.
         :return: True if the message is valid and false otherwise

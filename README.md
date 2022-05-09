@@ -35,17 +35,18 @@ Verification and authentication is performed via EIP-191, using the `address` fi
 
 ``` python
 try:
-    message.validate()
+    message.verify(signature="0x...")
+    # You can also specify other checks (e.g. the nonce or domain expected).
 except siwe.ValidationError:
     # Invalid
 ```
 
 ### Serialization of a SIWE Message
 
-`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `sign_message` method:
+`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` method:
 
 ``` python
-print(message.sign_message())
+print(message.prepare_message())
 ```
 
 ## Example
@@ -55,11 +56,15 @@ Parsing and verifying a `SiweMessage` is easy:
 ``` python
 try:
     message: SiweMessage = SiweMessage(message=eip_4361_string)
-    message.validate():
+    message.verify(signature, nonce="abcdef", domain="example.com"):
 except siwe.ValueError:
     # Invalid message
     print("Authentication attempt rejected.")
 except siwe.ExpiredMessage:
+    print("Authentication attempt rejected.")
+except siwe.DomainMismatch:
+    print("Authentication attempt rejected.")
+except siwe.NonceMismatch:
     print("Authentication attempt rejected.")
 except siwe.MalformedSession as e:
     # e.missing_fields contains the missing information needed for validation
@@ -67,7 +72,7 @@ except siwe.MalformedSession as e:
 except siwe.InvalidSignature:
     print("Authentication attempt rejected.")
     
-# Message has been validated. Authentication complete. Continue with authorization/other.
+# Message has been verified. Authentication complete. Continue with authorization/other.
 ```
 
 ## TODOs
