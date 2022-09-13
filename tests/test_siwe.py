@@ -1,9 +1,9 @@
-import pytest
 import json
-from humps import decamelize
-from eth_account import Account, messages
-from dateutil.parser import isoparse
 
+import pytest
+from dateutil.parser import isoparse
+from eth_account import Account, messages
+from humps import decamelize
 
 from siwe.siwe import SiweMessage, VerificationError
 
@@ -16,6 +16,8 @@ with open(BASE_TESTS + "verification_negative.json", "r") as f:
     verification_negative = decamelize(json.load(fp=f))
 with open(BASE_TESTS + "verification_positive.json", "r") as f:
     verification_positive = decamelize(json.load(fp=f))
+with open(BASE_TESTS + "eip1271.json", "r") as f:
+    verification_eip1271 = decamelize(json.load(fp=f))
 
 
 class TestMessageParsing:
@@ -58,6 +60,14 @@ class TestMessageVerification:
         siwe_message = SiweMessage(message=test)
         timestamp = isoparse(test["time"]) if "time" in test else None
         siwe_message.verify(test["signature"], timestamp=timestamp)
+
+    @pytest.mark.parametrize(
+        "test_name,test",
+        [(test_name, test) for test_name, test in verification_eip1271.items()],
+    )
+    def test_eip1271_message(self, test_name, test):
+        siwe_message = SiweMessage(message=test["message"])
+        siwe_message.verify(test["signature"])
 
     @pytest.mark.parametrize(
         "test_name,test",
