@@ -75,6 +75,14 @@ except siwe.InvalidSignature:
 # Message has been verified. Authentication complete. Continue with authorization/other.
 ```
 
+## Testing
+
+```bash
+poetry install
+git submodule update --init
+poetry run pytest
+```
+
 ## See Also
 
 - [Sign-In with Ethereum: TypeScript](https://github.com/spruceid/siwe)
