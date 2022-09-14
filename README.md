@@ -19,7 +19,7 @@ SIWE provides a `SiweMessage` class which implements EIP-4361.
 Parsing is done by initializing a `SiweMessage` object with an EIP-4361 formatted string:
 
 ``` python
-from siwe import SiweMessage
+from siwe.siwe import SiweMessage
 message: SiweMessage = SiweMessage(message=eip_4361_string)
 ```
 
@@ -43,7 +43,7 @@ except siwe.ValidationError:
 
 ### Serialization of a SIWE Message
 
-`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` method:
+`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` or `sign_message` methods:
 
 ``` python
 print(message.prepare_message())
