@@ -43,7 +43,7 @@ except siwe.ValidationError:
 
 ### Serialization of a SIWE Message
 
-`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` or `sign_message` methods:
+`SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` method:
 
 ``` python
 print(message.prepare_message())
