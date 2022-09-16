@@ -1,13 +1,14 @@
 import secrets
 import string
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional, Union
 
 import eth_utils
-import rfc3987
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
+from pydantic import AnyUrl, BaseModel, Field
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -26,6 +27,13 @@ EIP1271_CONTRACT_ABI = [
     }
 ]
 EIP1271_MAGICVALUE = "1626ba7e"
+
+
+ALPHANUMERICS = string.ascii_letters + string.digits
+
+
+def generate_nonce() -> str:
+    return "".join(secrets.choice(ALPHANUMERICS) for _ in range(11))
 
 
 class VerificationError(Exception):
@@ -57,69 +65,82 @@ class MalformedSession(VerificationError):
         self.missing_fields = missing_fields
 
 
-class SiweMessage:
+class VersionEnum(str, Enum):
+    one = "1"
+
+    def __str__(self):
+        return self
+
+
+class CustomDateTime(str):
+    """
+    ISO-8601 datetime string, meant to enable transitivity of deserialisation and serialisation.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise TypeError("string required")
+        cls.date = isoparse(v)
+        return cls(v)
+
+
+class Address(str):
+    """
+    EIP-55 compliant Ethereum address.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise TypeError("string required")
+        if not Web3.isChecksumAddress(v):
+            raise ValueError("Message `address` must be in EIP-55 format")
+        return cls(v)
+
+
+class SiweMessage(BaseModel):
     """
     A class meant to fully encompass a Sign-in with Ethereum (EIP-4361) message. Its utility strictly remains
     within formatting and compliance.
     """
 
-    domain: str  # RFC 4501 dns authority that is requesting the signing.
-
-    address: str  # Ethereum address performing the signing conformant to capitalization encoded checksum specified
-    # in EIP-55 where applicable.
-
-    statement: Optional[
-        str
-    ]  # Human-readable ASCII assertion that the user will sign, and it must not
-    # contain `\n`.
-
-    uri: str  # RFC 3986 URI referring to the resource that is the subject of the signing.
-
-    version: str  # Current version of the message.
-
-    chain_id: int  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be
-    # resolved.
-
-    nonce: Optional[
-        str
-    ]  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
-
-    issued_at: str  # ISO 8601 datetime string of the current time.
-
-    expiration_time: Optional[
-        str
-    ]  # ISO 8601 datetime string that, if present, indicates when the signed
-    # authentication message is no longer valid.
-
-    not_before: Optional[
-        str
-    ]  # ISO 8601 datetime string that, if present, indicates when the signed
-    # authentication message will become valid.
-
-    request_id: Optional[
-        str
-    ]  # System-specific identifier that may be used to uniquely refer to the sign-in
-    # request.
-
-    resources: Optional[
-        List[str]
-    ]  # List of information or references to information the user wishes to have
-    # resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
-
-    __slots__ = (
-        "domain",
-        "address",
-        "statement",
-        "uri",
-        "chain_id",
-        "version",
-        "nonce",
-        "issued_at",
-        "expiration_time",
-        "not_before",
-        "request_id",
-        "resources",
-    )
+    domain: str = Field(
+        regex="^[^/?#]+$"
+    )  # RFC 4501 dns authority that is requesting the signing.
+    address: Address  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
+    uri: AnyUrl  # RFC 3986 URI referring to the resource that is the subject of the signing.
+    version: VersionEnum  # Current version of the message.
+    chain_id: int = Field(
+        gt=0
+    )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
+    issued_at: CustomDateTime  # ISO 8601 datetime string of the current time.
+    nonce: str = Field(
+        min_length=8
+    )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
+    statement: Optional[str] = Field(
+        None, regex="^[^\n]+$"
+    )  # Human-readable ASCII assertion that the user will sign, and it must not contain `\n`.
+    expiration_time: Optional[CustomDateTime] = Field(
+        None
+    )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message is no longer valid.
+    not_before: Optional[CustomDateTime] = Field(
+        None
+    )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message will become valid.
+    request_id: Optional[str] = Field(
+        None
+    )  # System-specific identifier that may be used to uniquely refer to the sign-in request.
+    resources: Optional[List[AnyUrl]] = Field(
+        None, min_items=1
+    )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
     def __init__(self, message: Union[str, dict], abnf: bool = True):
         if isinstance(message, str):
@@ -132,35 +153,8 @@ class SiweMessage:
             message_dict = message
         else:
             raise TypeError
-        for key in self.__slots__:
-            value = message_dict.get(key)
-
-            if key == "chain_id" and value is not None and type(value) is not int:
-                value = int(value)
-            elif key == "issued_at" and value is not None:
-                isoparse(value)
-            elif key == "expiration_time" and value is not None:
-                isoparse(value)
-            elif key == "not_before" and value is not None:
-                isoparse(value)
-            elif key == "domain" and value == "":
-                raise ValueError("Message `domain` must not be empty")
-            elif key == "address" and value is not None:
-                if not eth_utils.is_checksum_formatted_address(value):
-                    raise ValueError("Message `address` must be in EIP-55 format")
-            elif key == "uri" and value is not None:
-                try:
-                    rfc3987.parse(value, rule="URI")
-                except ValueError:
-                    raise ValueError("Invalid format for field `uri`")
-            elif key == "resources" and value is not None:
-                for url in value:
-                    try:
-                        rfc3987.parse(url, rule="URI")
-                    except ValueError:
-                        raise ValueError("Invalid format for field `resources`")
-
-            setattr(self, key, value)
+        # There is some redundancy in the checks when deserialising a message.
+        super().__init__(**message_dict)
 
     def prepare_message(self) -> str:
         """
@@ -177,9 +171,6 @@ class SiweMessage:
         prefix = "\n".join([header, self.address])
 
         version_field = f"Version: {self.version}"
-
-        if self.nonce is None:
-            self.nonce = generate_nonce()
 
         chain_field = f"Chain ID: {self.chain_id or 1}"
 
@@ -221,14 +212,6 @@ class SiweMessage:
 
         return "\n\n".join([prefix, suffix])
 
-    def get_expiration_time(self) -> Optional[datetime]:
-        return (
-            isoparse(self.expiration_time) if self.expiration_time is not None else None
-        )
-
-    def get_not_before(self) -> Optional[datetime]:
-        return isoparse(self.not_before) if self.not_before is not None else None
-
     def verify(
         self,
         signature: str,
@@ -254,30 +237,18 @@ class SiweMessage:
         message = encode_defunct(text=self.prepare_message())
         w3 = Web3(provider=provider)
 
-        missing = []
-        if message is None:
-            missing.append("message")
-
-        if self.address is None:
-            missing.append("address")
-
-        if len(missing) > 0:
-            raise MalformedSession(missing)
-
         if domain is not None and self.domain != domain:
             raise DomainMismatch
-
         if nonce is not None and self.nonce != nonce:
             raise NonceMismatch
 
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
-
-        expiration_time = self.get_expiration_time()
-        if expiration_time is not None and verification_time >= expiration_time:
+        if (
+            self.expiration_time is not None
+            and verification_time >= self.expiration_time.date
+        ):
             raise ExpiredMessage
-
-        not_before = self.get_not_before()
-        if not_before is not None and verification_time <= not_before:
+        if self.not_before is not None and verification_time <= self.not_before.date:
             raise NotYetValidMessage
 
         try:
@@ -313,10 +284,3 @@ def check_contract_wallet_signature(
         return response.hex() == EIP1271_MAGICVALUE
     except BadFunctionCallOutput:
         return False
-
-
-alphanumerics = string.ascii_letters + string.digits
-
-
-def generate_nonce() -> str:
-    return "".join(secrets.choice(alphanumerics) for _ in range(11))

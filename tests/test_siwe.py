@@ -13,6 +13,8 @@ with open(BASE_TESTS + "parsing_positive.json", "r") as f:
     parsing_positive = decamelize(json.load(fp=f))
 with open(BASE_TESTS + "parsing_negative.json", "r") as f:
     parsing_negative = decamelize(json.load(fp=f))
+with open(BASE_TESTS + "parsing_negative_objects.json", "r") as f:
+    parsing_negative_objects = decamelize(json.load(fp=f))
 with open(BASE_TESTS + "verification_negative.json", "r") as f:
     verification_negative = decamelize(json.load(fp=f))
 with open(BASE_TESTS + "verification_positive.json", "r") as f:
@@ -30,7 +32,10 @@ class TestMessageParsing:
     def test_valid_message(self, abnf, test_name, test):
         siwe_message = SiweMessage(message=test["message"], abnf=abnf)
         for key, value in test["fields"].items():
-            assert getattr(siwe_message, key) == value
+            v = getattr(siwe_message, key)
+            if not isinstance(v, int) and not isinstance(v, list):
+                v = str(v)
+            assert v == value
 
     @pytest.mark.parametrize("abnf", [True, False])
     @pytest.mark.parametrize(
@@ -40,6 +45,14 @@ class TestMessageParsing:
     def test_invalid_message(self, abnf, test_name, test):
         with pytest.raises(ValueError):
             SiweMessage(message=test, abnf=abnf)
+
+    @pytest.mark.parametrize(
+        "test_name,test",
+        [(test_name, test) for test_name, test in parsing_negative_objects.items()],
+    )
+    def test_invalid_object_message(self, test_name, test):
+        with pytest.raises(ValueError):
+            SiweMessage(message=test)
 
 
 class TestMessageGeneration:
