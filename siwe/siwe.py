@@ -13,7 +13,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from .parsed import ABNFParsedMessage, RegExpParsedMessage
 
-CONTRACT_ABI = [
+EIP1271_CONTRACT_ABI = [
     {
         "inputs": [
             {"internalType": "bytes32", "name": " _message", "type": "bytes32"},
@@ -25,6 +25,7 @@ CONTRACT_ABI = [
         "type": "function",
     }
 ]
+EIP1271_MAGICVALUE = "1626ba7e"
 
 
 class VerificationError(Exception):
@@ -305,11 +306,11 @@ def check_contract_wallet_signature(
     :param w3: A Web3 provider able to perform a contract check.
     :return: True if the signature is valid per EIP-1271.
     """
-    contract = w3.eth.contract(address=address, abi=CONTRACT_ABI)
+    contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
     hash_ = _hash_eip191_message(message)
     try:
         response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
-        return response.hex() == "1626ba7e"
+        return response.hex() == EIP1271_MAGICVALUE
     except BadFunctionCallOutput:
         return False
 
