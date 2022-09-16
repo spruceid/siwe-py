@@ -235,9 +235,7 @@ class SiweMessage:
         domain: Optional[str] = None,
         nonce: Optional[str] = None,
         timestamp: Optional[datetime] = None,
-        provider: HTTPProvider = HTTPProvider(
-            endpoint_uri="https://cloudflare-eth.com"
-        ),
+        provider: Optional[HTTPProvider] = None,
     ) -> None:
         """
         Verifies the integrity of fields of this SiweMessage object by matching its signature.
@@ -289,7 +287,7 @@ class SiweMessage:
             raise InvalidSignature
 
         if address != self.address:
-            if not check_contract_wallet_signature(
+            if provider is not None and not check_contract_wallet_signature(
                 address=self.address, message=message, signature=signature, w3=w3
             ):
                 raise InvalidSignature

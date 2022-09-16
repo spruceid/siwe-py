@@ -4,6 +4,7 @@ import pytest
 from dateutil.parser import isoparse
 from eth_account import Account, messages
 from humps import decamelize
+from web3 import HTTPProvider
 
 from siwe.siwe import SiweMessage, VerificationError
 
@@ -66,14 +67,16 @@ class TestMessageVerification:
         [(test_name, test) for test_name, test in verification_eip1271.items()],
     )
     def test_eip1271_message(self, test_name, test):
+        provider = HTTPProvider(endpoint_uri="https://cloudflare-eth.com")
         siwe_message = SiweMessage(message=test["message"])
-        siwe_message.verify(test["signature"])
+        siwe_message.verify(test["signature"], provider=provider)
 
     @pytest.mark.parametrize(
         "test_name,test",
         [(test_name, test) for test_name, test in verification_negative.items()],
     )
     def test_invalid_message(self, test_name, test):
+        provider = HTTPProvider(endpoint_uri="https://cloudflare-eth.com")
         with pytest.raises((VerificationError, ValueError)):
             siwe_message = SiweMessage(message=test)
             domain_binding = test.get("domain_binding")
@@ -84,6 +87,7 @@ class TestMessageVerification:
                 domain=domain_binding,
                 nonce=match_nonce,
                 timestamp=timestamp,
+                provider=provider
             )
 
 
