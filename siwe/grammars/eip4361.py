@@ -1,7 +1,8 @@
-from abnf.grammars.misc import load_grammar_rules
 from abnf.grammars import rfc3986
+from abnf.grammars.misc import load_grammar_rules
 from abnf.parser import Rule as _Rule
-from . import rfc5234, rfc3339
+
+from . import rfc3339, rfc5234
 
 
 @load_grammar_rules(

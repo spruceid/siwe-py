@@ -31,7 +31,7 @@ message: SiweMessage = SiweMessage(message={"domain": "login.xyz", "address": "0
 
 ### Verifying and Authenticating a SIWE Message
 
-Verification and authentication is performed via EIP-191, using the `address` field of the `SiweMessage` as the expected signer. The validate method checks message structural integrity, signature address validity, and time-based validity attributes. 
+Verification and authentication is performed via EIP-191, using the `address` field of the `SiweMessage` as the expected signer. The validate method checks message structural integrity, signature address validity, and time-based validity attributes.
 
 ``` python
 try:
@@ -71,13 +71,9 @@ except siwe.MalformedSession as e:
     print("Authentication attempt rejected.")
 except siwe.InvalidSignature:
     print("Authentication attempt rejected.")
-    
+
 # Message has been verified. Authentication complete. Continue with authorization/other.
 ```
-
-## TODOs
-
-- Support for contract wallets.
 
 ## See Also
 

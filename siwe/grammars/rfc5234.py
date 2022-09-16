@@ -1,5 +1,5 @@
-from abnf.parser import Rule as _Rule
 from abnf.grammars.misc import load_grammar_rules
+from abnf.parser import Rule as _Rule
 
 
 @load_grammar_rules()

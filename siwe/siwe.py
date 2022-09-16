@@ -1,16 +1,31 @@
-from datetime import datetime
-import string
 import secrets
+import string
+from datetime import datetime
+from typing import List, Optional, Union
+
+import eth_utils
 import rfc3987
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
-from typing import Optional, List, Union
+from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
+from web3 import HTTPProvider, Web3
+from web3.exceptions import BadFunctionCallOutput
 
-import eth_utils
-from web3 import Web3, HTTPProvider
-import eth_account.messages
+from .parsed import ABNFParsedMessage, RegExpParsedMessage
 
-from .parsed import RegExpParsedMessage, ABNFParsedMessage
+EIP1271_CONTRACT_ABI = [
+    {
+        "inputs": [
+            {"internalType": "bytes32", "name": " _message", "type": "bytes32"},
+            {"internalType": "bytes", "name": " _signature", "type": "bytes"},
+        ],
+        "name": "isValidSignature",
+        "outputs": [{"internalType": "bytes4", "name": "", "type": "bytes4"}],
+        "stateMutability": "view",
+        "type": "function",
+    }
+]
+EIP1271_MAGICVALUE = "1626ba7e"
 
 
 class VerificationError(Exception):
@@ -232,10 +247,11 @@ class SiweMessage:
         :param timestamp: Timestamp used to verify the expiry date and other dates fields. Uses the current time by
         default.
         :param provider: A Web3 provider able to perform a contract check, this is required if support for Smart
-        Contract Wallets that implement EIP-1271 is needed.
-        :return: True if the message is valid and false otherwise
+        Contract Wallets that implement EIP-1271 is needed. It is also configurable with the environment
+        variable `WEB3_HTTP_PROVIDER_URI`
+        :return: None if the message is valid and raises an exception otherwise
         """
-        message = eth_account.messages.encode_defunct(text=self.prepare_message())
+        message = encode_defunct(text=self.prepare_message())
         w3 = Web3(provider=provider)
 
         missing = []
@@ -266,26 +282,37 @@ class SiweMessage:
 
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
+        except ValueError:
+            address = None
         except eth_utils.exceptions.ValidationError:
             raise InvalidSignature
 
         if address != self.address:
-            raise InvalidSignature
-        #     if not check_contract_wallet_signature(message=self, provider=provider):
-        #         # TODO: Add error context
+            if provider is not None and not check_contract_wallet_signature(
+                address=self.address, message=message, signature=signature, w3=w3
+            ):
+                raise InvalidSignature
 
 
-def check_contract_wallet_signature(message: SiweMessage, *, provider: HTTPProvider):
+def check_contract_wallet_signature(
+    address: str, message: SignableMessage, signature: str, w3: Web3
+) -> bool:
     """
-    Calls the EIP-1271 method for Smart Contract wallets,
+    Calls the EIP-1271 method for Smart Contract wallets.
 
-    :param message: The EIP-4361 parsed message
-    :param provider: A Web3 provider able to perform a contract check.
+    :param address: The address of the contract
+    :param message: The EIP-4361 formatted message
+    :param signature: The EIP-1271 signature
+    :param w3: A Web3 provider able to perform a contract check.
     :return: True if the signature is valid per EIP-1271.
     """
-    raise NotImplementedError(
-        "siwe does not yet support EIP-1271 method signature verification."
-    )
+    contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
+    hash_ = _hash_eip191_message(message)
+    try:
+        response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
+        return response.hex() == EIP1271_MAGICVALUE
+    except BadFunctionCallOutput:
+        return False
 
 
 alphanumerics = string.ascii_letters + string.digits
