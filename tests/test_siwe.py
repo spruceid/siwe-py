@@ -87,7 +87,7 @@ class TestMessageVerification:
                 domain=domain_binding,
                 nonce=match_nonce,
                 timestamp=timestamp,
-                provider=provider
+                provider=provider,
             )
 
 

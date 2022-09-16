@@ -5,11 +5,11 @@ from typing import List, Optional, Union
 
 import eth_utils
 import rfc3987
-import web3
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from web3 import HTTPProvider, Web3
+from web3.exceptions import BadFunctionCallOutput
 
 from .parsed import ABNFParsedMessage, RegExpParsedMessage
 
@@ -310,7 +310,7 @@ def check_contract_wallet_signature(
     try:
         response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
         return response.hex() == "1626ba7e"
-    except web3.exceptions.BadFunctionCallOutput:
+    except BadFunctionCallOutput:
         return False
 
 
