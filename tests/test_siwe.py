@@ -84,13 +84,19 @@ class TestMessageVerification:
         siwe_message = SiweMessage(message=test["message"])
         siwe_message.verify(test["signature"], provider=provider)
 
-    @pytest.mark.parametrize("provider", [HTTPProvider(endpoint_uri="https://cloudflare-eth.com"), None])
+    @pytest.mark.parametrize(
+        "provider", [HTTPProvider(endpoint_uri="https://cloudflare-eth.com"), None]
+    )
     @pytest.mark.parametrize(
         "test_name,test",
         [(test_name, test) for test_name, test in verification_negative.items()],
     )
     def test_invalid_message(self, provider, test_name, test):
-        if test_name in ["invalid expiration_time", "invalid not_before", "invalid issued_at"]:
+        if test_name in [
+            "invalid expiration_time",
+            "invalid not_before",
+            "invalid issued_at",
+        ]:
             with pytest.raises(ValueError):
                 siwe_message = SiweMessage(message=test)
             return
