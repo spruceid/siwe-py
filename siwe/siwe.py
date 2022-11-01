@@ -262,7 +262,9 @@ class SiweMessage(BaseModel):
             raise InvalidSignature
 
         if address != self.address:
-            if provider is not None and not check_contract_wallet_signature(
+            if provider is None:
+                raise InvalidSignature
+            elif not check_contract_wallet_signature(
                 address=self.address, message=message, signature=signature, w3=w3
             ):
                 raise InvalidSignature
