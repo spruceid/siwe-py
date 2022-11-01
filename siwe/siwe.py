@@ -8,7 +8,7 @@ import eth_utils
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, Field, ValidationError
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -153,8 +153,11 @@ class SiweMessage(BaseModel):
             message_dict = message
         else:
             raise TypeError
-        # There is some redundancy in the checks when deserialising a message.
-        super().__init__(**message_dict)
+        # TODO There is some redundancy in the checks when deserialising a message.
+        try:
+            super().__init__(**message_dict)
+        except ValidationError as e:
+            raise ValueError(e)
 
     def prepare_message(self) -> str:
         """
@@ -259,7 +262,9 @@ class SiweMessage(BaseModel):
             raise InvalidSignature
 
         if address != self.address:
-            if provider is not None and not check_contract_wallet_signature(
+            if provider is None:
+                raise InvalidSignature
+            elif not check_contract_wallet_signature(
                 address=self.address, message=message, signature=signature, w3=w3
             ):
                 raise InvalidSignature
