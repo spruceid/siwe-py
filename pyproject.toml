@@ -25,7 +25,7 @@ pydantic = "^1.10.2"
 pytest = "^6.2.5"
 black = "^22.3.0"
 pyhumps = "^3.5.0"
-eth-account = "^0.5.6"
+eth-account = "^0.8.0"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
 
