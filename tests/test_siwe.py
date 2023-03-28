@@ -93,9 +93,9 @@ class TestMessageVerification:
     )
     def test_invalid_message(self, provider, test_name, test):
         if test_name in [
-            "invalid expiration_time",
-            "invalid not_before",
-            "invalid issued_at",
+            "invalidexpiration_time",
+            "invalidnot_before",
+            "invalidissued_at",
         ]:
             with pytest.raises(ValueError):
                 siwe_message = SiweMessage(message=test)

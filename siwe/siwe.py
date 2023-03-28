@@ -102,7 +102,7 @@ class Address(str):
     def validate(cls, v):
         if not isinstance(v, str):
             raise TypeError("string required")
-        if not Web3.isChecksumAddress(v):
+        if not Web3.is_checksum_address(v):
             raise ValueError("Message `address` must be in EIP-55 format")
         return cls(v)
 
