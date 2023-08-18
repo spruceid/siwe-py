@@ -70,7 +70,22 @@ class VersionEnum(str, Enum):
     one = "1"
 
     def __str__(self):
-        return self.value
+        return self
+
+
+class CustomDateTime(str):
+    """
+    ISO-8601 datetime string, meant to enable transitivity of deserialisation and serialisation.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: str):
+        cls.date = isoparse(v)
+        return cls(v)
 
 
 class SiweMessage(BaseModel):
@@ -88,17 +103,17 @@ class SiweMessage(BaseModel):
     chain_id: int = Field(
         gt=0
     )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
-    issued_at: datetime  # ISO 8601 datetime string of the current time.
+    issued_at: CustomDateTime  # ISO 8601 datetime string of the current time.
     nonce: str = Field(
         min_length=8
     )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
     statement: Optional[str] = Field(
         None, regex="^[^\n]+$"
     )  # Human-readable ASCII assertion that the user will sign, and it must not contain `\n`.
-    expiration_time: Optional[datetime] = Field(
+    expiration_time: Optional[CustomDateTime] = Field(
         None
     )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message is no longer valid.
-    not_before: Optional[datetime] = Field(
+    not_before: Optional[CustomDateTime] = Field(
         None
     )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message will become valid.
     request_id: Optional[str] = Field(
@@ -114,11 +129,6 @@ class SiweMessage(BaseModel):
         if not Web3.is_checksum_address(v):
             raise ValueError("Message `address` must be in EIP-55 format")
         return v
-
-    @validator("issued_at", "expiration_time", "not_before")
-    @classmethod
-    def validate(cls, v: str) -> datetime:
-        return isoparse(v)
 
     def __init__(self, message: Union[str, dict[str, Any]], abnf: bool = True):
         if isinstance(message, str):
@@ -159,17 +169,15 @@ class SiweMessage(BaseModel):
 
         suffix_array = [uri_field, version_field, chain_field, nonce_field]
 
-        issued_at_field = f"Issued At: {self.issued_at.isoformat()}"
+        issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
 
         if self.expiration_time:
-            expiration_time_field = (
-                f"Expiration Time: {self.expiration_time.isoformat()}"
-            )
+            expiration_time_field = f"Expiration Time: {self.expiration_time}"
             suffix_array.append(expiration_time_field)
 
         if self.not_before:
-            not_before_field = f"Not Before: {self.not_before.isoformat()}"
+            not_before_field = f"Not Before: {self.not_before}"
             suffix_array.append(not_before_field)
 
         if self.request_id:
@@ -224,10 +232,10 @@ class SiweMessage(BaseModel):
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
         if (
             self.expiration_time is not None
-            and verification_time >= self.expiration_time
+            and verification_time >= self.expiration_time.date
         ):
             raise ExpiredMessage
-        if self.not_before is not None and verification_time <= self.not_before:
+        if self.not_before is not None and verification_time <= self.not_before.date:
             raise NotYetValidMessage
 
         try:
