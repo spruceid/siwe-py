@@ -103,7 +103,7 @@ class SiweMessage(BaseModel):
     chain_id: int = Field(
         gt=0
     )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
-    issued_at: CustomDateTime # ISO 8601 datetime string of the current time.
+    issued_at: CustomDateTime  # ISO 8601 datetime string of the current time.
     nonce: str = Field(
         min_length=8
     )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
@@ -123,13 +123,13 @@ class SiweMessage(BaseModel):
         None, min_items=1
     )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
-    @validator('address')
+    @validator("address")
     @classmethod
     def address_is_checksum_address(cls, v: str) -> str:
         if not Web3.is_checksum_address(v):
             raise ValueError("Message `address` must be in EIP-55 format")
         return v
-    
+
     def __init__(self, message: Union[str, dict[str, Any]], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
