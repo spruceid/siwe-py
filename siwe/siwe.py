@@ -225,33 +225,33 @@ class SiweMessage(BaseModel):
         w3 = Web3(provider=provider)
 
         if domain is not None and self.domain != domain:
-            raise DomainMismatch
+            raise DomainMismatch()
         if nonce is not None and self.nonce != nonce:
-            raise NonceMismatch
+            raise NonceMismatch()
 
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
         if (
             self.expiration_time is not None
             and verification_time >= self.expiration_time.date
         ):
-            raise ExpiredMessage
+            raise ExpiredMessage()
         if self.not_before is not None and verification_time <= self.not_before.date:
-            raise NotYetValidMessage
+            raise NotYetValidMessage()
 
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
         except ValueError:
             address = None
         except eth_utils.exceptions.ValidationError:
-            raise InvalidSignature
+            raise InvalidSignature()
 
         if address != self.address:
             if provider is None:
-                raise InvalidSignature
+                raise InvalidSignature()
             elif not check_contract_wallet_signature(
                 address=self.address, message=message, signature=signature, w3=w3
             ):
-                raise InvalidSignature
+                raise InvalidSignature()
 
 
 def check_contract_wallet_signature(
