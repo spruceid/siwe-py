@@ -10,6 +10,7 @@ from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError
 from web3 import HTTPProvider, Web3
+from eth_typing import ChecksumAddress
 from web3.exceptions import BadFunctionCallOutput
 
 from .parsed import ABNFParsedMessage, RegExpParsedMessage
@@ -87,21 +88,6 @@ class CustomDateTime(str):
         return cls(v)
 
 
-class Address(str):
-    """
-    EIP-55 compliant Ethereum address.
-    """
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v:str):
-        if not Web3.is_checksum_address(v):
-            raise ValueError("Message `address` must be in EIP-55 format")
-        return cls(v)
-
 
 class SiweMessage(BaseModel):
     """
@@ -112,7 +98,7 @@ class SiweMessage(BaseModel):
     domain: str = Field(
         regex="^[^/?#]+$"
     )  # RFC 4501 dns authority that is requesting the signing.
-    address: Address  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
+    address: ChecksumAddress  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
     uri: AnyUrl  # RFC 3986 URI referring to the resource that is the subject of the signing.
     version: VersionEnum  # Current version of the message.
     chain_id: int = Field(
@@ -269,7 +255,7 @@ class SiweMessage(BaseModel):
 
 
 def check_contract_wallet_signature(
-    address: Address, message: SignableMessage, signature: str, w3: Web3
+    address: ChecksumAddress, message: SignableMessage, signature: str, w3: Web3
 ) -> bool:
     """
     Calls the EIP-1271 method for Smart Contract wallets.
@@ -280,7 +266,7 @@ def check_contract_wallet_signature(
     :param w3: A Web3 provider able to perform a contract check.
     :return: True if the signature is valid per EIP-1271.
     """
-    contract = w3.eth.contract(address=Web3.to_checksum_address(address), abi=EIP1271_CONTRACT_ABI)
+    contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
     hash_ = _hash_eip191_message(message)
     try:
         response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
