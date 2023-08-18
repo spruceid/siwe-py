@@ -9,7 +9,7 @@ from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError
+from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError, validator
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -103,9 +103,7 @@ class SiweMessage(BaseModel):
     chain_id: int = Field(
         gt=0
     )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
-    issued_at: Optional[CustomDateTime] = Field(
-        None
-    )  # ISO 8601 datetime string of the current time.
+    issued_at: CustomDateTime # ISO 8601 datetime string of the current time.
     nonce: str = Field(
         min_length=8
     )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
@@ -125,6 +123,13 @@ class SiweMessage(BaseModel):
         None, min_items=1
     )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
+    @validator('address')
+    @classmethod
+    def address_is_checksum_address(cls, v: str) -> str:
+        if not Web3.is_checksum_address(v):
+            raise ValueError("Message `address` must be in EIP-55 format")
+        return v
+    
     def __init__(self, message: Union[str, dict[str, Any]], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
@@ -163,10 +168,6 @@ class SiweMessage(BaseModel):
         nonce_field = f"Nonce: {self.nonce}"
 
         suffix_array = [uri_field, version_field, chain_field, nonce_field]
-
-        if self.issued_at is None:
-            # TODO: Should we default to UTC or settle for local time? UX may be better for local
-            self.issued_at = CustomDateTime(datetime.now().astimezone().isoformat())
 
         issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
