@@ -2,7 +2,7 @@ import secrets
 import string
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Iterable
 
 import eth_utils
 from dateutil.parser import isoparse
@@ -61,7 +61,7 @@ class NonceMismatch(VerificationError):
 
 
 class MalformedSession(VerificationError):
-    def __init__(self, missing_fields):
+    def __init__(self, missing_fields:Iterable[str]):
         self.missing_fields = missing_fields
 
 
@@ -82,9 +82,7 @@ class CustomDateTime(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError("string required")
+    def validate(cls, v:str):
         cls.date = isoparse(v)
         return cls(v)
 
@@ -99,9 +97,7 @@ class Address(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError("string required")
+    def validate(cls, v:str):
         if not Web3.is_checksum_address(v):
             raise ValueError("Message `address` must be in EIP-55 format")
         return cls(v)
@@ -122,7 +118,9 @@ class SiweMessage(BaseModel):
     chain_id: int = Field(
         gt=0
     )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
-    issued_at: CustomDateTime  # ISO 8601 datetime string of the current time.
+    issued_at: Optional[CustomDateTime] = Field(
+        None
+    ) # ISO 8601 datetime string of the current time.
     nonce: str = Field(
         min_length=8
     )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
@@ -142,7 +140,7 @@ class SiweMessage(BaseModel):
         None, min_items=1
     )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
-    def __init__(self, message: Union[str, dict], abnf: bool = True):
+    def __init__(self, message: Union[str, dict[str,str]], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
                 parsed_message = ABNFParsedMessage(message=message)
@@ -183,7 +181,7 @@ class SiweMessage(BaseModel):
 
         if self.issued_at is None:
             # TODO: Should we default to UTC or settle for local time? UX may be better for local
-            self.issued_at = datetime.now().astimezone().isoformat()
+            self.issued_at = CustomDateTime(datetime.now().astimezone().isoformat())
 
         issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
@@ -271,7 +269,7 @@ class SiweMessage(BaseModel):
 
 
 def check_contract_wallet_signature(
-    address: str, message: SignableMessage, signature: str, w3: Web3
+    address: Address, message: SignableMessage, signature: str, w3: Web3
 ) -> bool:
     """
     Calls the EIP-1271 method for Smart Contract wallets.
@@ -282,7 +280,7 @@ def check_contract_wallet_signature(
     :param w3: A Web3 provider able to perform a contract check.
     :return: True if the signature is valid per EIP-1271.
     """
-    contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
+    contract = w3.eth.contract(address=Web3.to_checksum_address(address), abi=EIP1271_CONTRACT_ABI)
     hash_ = _hash_eip191_message(message)
     try:
         response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
