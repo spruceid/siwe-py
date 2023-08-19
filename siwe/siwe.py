@@ -70,7 +70,7 @@ class VersionEnum(str, Enum):
     one = "1"
 
     def __str__(self):
-        return self
+        return self.value
 
 
 class CustomDateTime(str):
