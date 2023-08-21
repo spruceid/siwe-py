@@ -8,7 +8,7 @@ import eth_utils
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
-from pydantic import AnyUrl, BaseModel, Field, ValidationError
+from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
