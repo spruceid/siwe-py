@@ -2,7 +2,7 @@ import secrets
 import string
 from datetime import datetime
 from enum import Enum
-from typing import Any, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import eth_utils
 from dateutil.parser import isoparse
@@ -130,7 +130,7 @@ class SiweMessage(BaseModel):
             raise ValueError("Message `address` must be in EIP-55 format")
         return v
 
-    def __init__(self, message: Union[str, dict[str, Any]], abnf: bool = True):
+    def __init__(self, message: Union[str, Dict[str, Any]], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
                 parsed_message = ABNFParsedMessage(message=message)
