@@ -35,3 +35,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.urls]
 "EIP" = "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4361.md"
 "Discord" = "https://discord.gg/Sf9tSFzrnt"
+
+[tool.pyright]
+typeCheckingMode = "basic"

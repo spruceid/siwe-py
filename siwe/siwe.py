@@ -2,13 +2,14 @@ import secrets
 import string
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import eth_utils
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
-from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError
+from eth_typing import ChecksumAddress
+from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError, validator
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -61,7 +62,7 @@ class NonceMismatch(VerificationError):
 
 
 class MalformedSession(VerificationError):
-    def __init__(self, missing_fields):
+    def __init__(self, missing_fields: Iterable[str]):
         self.missing_fields = missing_fields
 
 
@@ -69,7 +70,7 @@ class VersionEnum(str, Enum):
     one = "1"
 
     def __str__(self):
-        return self
+        return self.value
 
 
 class CustomDateTime(str):
@@ -82,28 +83,8 @@ class CustomDateTime(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError("string required")
+    def validate(cls, v: str):
         cls.date = isoparse(v)
-        return cls(v)
-
-
-class Address(str):
-    """
-    EIP-55 compliant Ethereum address.
-    """
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError("string required")
-        if not Web3.is_checksum_address(v):
-            raise ValueError("Message `address` must be in EIP-55 format")
         return cls(v)
 
 
@@ -116,7 +97,7 @@ class SiweMessage(BaseModel):
     domain: str = Field(
         regex="^[^/?#]+$"
     )  # RFC 4501 dns authority that is requesting the signing.
-    address: Address  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
+    address: ChecksumAddress  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
     uri: AnyUrl  # RFC 3986 URI referring to the resource that is the subject of the signing.
     version: VersionEnum  # Current version of the message.
     chain_id: int = Field(
@@ -142,7 +123,14 @@ class SiweMessage(BaseModel):
         None, min_items=1
     )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
-    def __init__(self, message: Union[str, dict], abnf: bool = True):
+    @validator("address")
+    @classmethod
+    def address_is_checksum_address(cls, v: str) -> str:
+        if not Web3.is_checksum_address(v):
+            raise ValueError("Message `address` must be in EIP-55 format")
+        return v
+
+    def __init__(self, message: Union[str, Dict[str, Any]], abnf: bool = True):
         if isinstance(message, str):
             if abnf:
                 parsed_message = ABNFParsedMessage(message=message)
@@ -180,10 +168,6 @@ class SiweMessage(BaseModel):
         nonce_field = f"Nonce: {self.nonce}"
 
         suffix_array = [uri_field, version_field, chain_field, nonce_field]
-
-        if self.issued_at is None:
-            # TODO: Should we default to UTC or settle for local time? UX may be better for local
-            self.issued_at = datetime.now().astimezone().isoformat()
 
         issued_at_field = f"Issued At: {self.issued_at}"
         suffix_array.append(issued_at_field)
@@ -271,7 +255,7 @@ class SiweMessage(BaseModel):
 
 
 def check_contract_wallet_signature(
-    address: str, message: SignableMessage, signature: str, w3: Web3
+    address: ChecksumAddress, message: SignableMessage, signature: str, w3: Web3
 ) -> bool:
     """
     Calls the EIP-1271 method for Smart Contract wallets.
