@@ -1,5 +1,7 @@
 """Top-level ABNF definition."""
 
+from typing import ClassVar, List
+
 from abnf.grammars import rfc3986
 from abnf.grammars.misc import load_grammar_rules
 from abnf.parser import Rule as _Rule
@@ -28,7 +30,7 @@ from . import rfc3339, rfc5234
 class Rule(_Rule):
     """Rules from EIP-4361."""
 
-    grammar = [
+    grammar: ClassVar[List] = [
         'sign-in-with-ethereum = domain %s" wants you to sign in with your Ethereum '
         'account:" LF address LF LF [ statement LF ] LF %s"URI: " uri LF %s"Version: "'
         ' version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF %s"Issued At: " '

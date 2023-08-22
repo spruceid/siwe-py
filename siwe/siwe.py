@@ -182,7 +182,7 @@ class SiweMessage(BaseModel):
         try:
             super().__init__(**message_dict)
         except ValidationError as e:
-            raise ValueError(e)
+            raise ValueError from e
 
     def prepare_message(self) -> str:
         """Serialize to the EIP-4361 format for signing.
@@ -279,7 +279,7 @@ class SiweMessage(BaseModel):
         except ValueError:
             address = None
         except eth_utils.exceptions.ValidationError:
-            raise InvalidSignature()
+            raise InvalidSignature from None
 
         if address != self.address:
             if provider is None:

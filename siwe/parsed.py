@@ -70,4 +70,4 @@ class ABNFParsedMessage:
                     resources.extend(
                         [r.value for r in resource.children if r.name == "uri"]
                     )
-                setattr(self, "resources", resources)
+                self.resources = resources
