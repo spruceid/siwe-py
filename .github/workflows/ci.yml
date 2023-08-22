@@ -32,3 +32,4 @@ jobs:
       - name: Flake8
         run: poetry run flake8
       - uses: jakebailey/pyright-action@v1
+        if: ${{ matrix.os != 'windows-latest' }}
