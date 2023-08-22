@@ -1,3 +1,5 @@
+"""Date ABNF definition."""
+
 from abnf.grammars.misc import load_grammar_rules
 from abnf.parser import Rule as _Rule
 
@@ -11,7 +13,7 @@ from . import rfc5234
     ]
 )
 class Rule(_Rule):
-    """Rules from RFC 3339"""
+    """Rules from RFC 3339."""
 
     grammar = [
         "date-fullyear = 4DIGIT",

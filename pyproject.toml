@@ -38,3 +38,18 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[tool.ruff]
+select = [
+  "E", # pycodestyle errors
+  # "W",   # pycodestyle warnings
+  "F", # pyflakes
+  # "I",   # isort
+  # "C",   # flake8-comprehensions
+  # "B",   # flake8-bugbear
+  # "RUF", # ruff specific
+  # "PT",  # flake8-pytest-style
+  "D", # pydocstyle
+]
+
+include = ["siwe/**"]

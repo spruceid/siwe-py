@@ -1,3 +1,5 @@
+"""Top-level ABNF definition."""
+
 from abnf.grammars import rfc3986
 from abnf.grammars.misc import load_grammar_rules
 from abnf.parser import Rule as _Rule
@@ -24,7 +26,7 @@ from . import rfc3339, rfc5234
     ]
 )
 class Rule(_Rule):
-    """Rules from EIP-4361"""
+    """Rules from EIP-4361."""
 
     grammar = [
         'sign-in-with-ethereum = domain %s" wants you to sign in with your Ethereum '

@@ -1,3 +1,5 @@
+"""Main module for SIWE messages construction and validation."""
+
 import secrets
 import string
 from datetime import datetime
@@ -30,76 +32,93 @@ EIP1271_CONTRACT_ABI = [
 EIP1271_MAGICVALUE = "1626ba7e"
 
 
-ALPHANUMERICS = string.ascii_letters + string.digits
+_ALPHANUMERICS = string.ascii_letters + string.digits
 
 
 def generate_nonce() -> str:
-    return "".join(secrets.choice(ALPHANUMERICS) for _ in range(11))
+    """Generate a cryptographically sound nonce."""
+    return "".join(secrets.choice(_ALPHANUMERICS) for _ in range(11))
 
 
 class VerificationError(Exception):
+    """Top-level validation and verification exception."""
+
     pass
 
 
 class InvalidSignature(VerificationError):
+    """The signature does not match the message."""
+
     pass
 
 
 class ExpiredMessage(VerificationError):
+    """The message is not valid any more."""
+
     pass
 
 
 class NotYetValidMessage(VerificationError):
+    """The message is not yet valid."""
+
     pass
 
 
 class DomainMismatch(VerificationError):
+    """The message does not contain the expected domain."""
+
     pass
 
 
 class NonceMismatch(VerificationError):
+    """The message does not contain the expected nonce."""
+
     pass
 
 
 class MalformedSession(VerificationError):
+    """A message could not be constructed as it is missing certain fields."""
+
     def __init__(self, missing_fields: Iterable[str]):
+        """Construct the exception with the missing fields."""
         self.missing_fields = missing_fields
 
 
 class VersionEnum(str, Enum):
+    """EIP-4361 versions."""
+
     one = "1"
 
     def __str__(self):
+        """EIP-4361 representation of the enum field."""
         return self.value
 
 
 class CustomDateTime(str):
-    """
-    ISO-8601 datetime string, meant to enable transitivity of deserialisation and
-    serialisation.
+    """ISO-8601 datetime string.
+
+    Meant to enable transitivity of deserialisation and serialisation.
     """
 
     @classmethod
     def __get_validators__(cls):
+        """Retrieve the validate method."""
         yield cls.validate
 
     @classmethod
     def validate(cls, v: str):
+        """Validate the format."""
         cls.date = isoparse(v)
         return cls(v)
 
 
 class SiweMessage(BaseModel):
-    """
-    A class meant to fully encompass a Sign-in with Ethereum (EIP-4361) message. Its
-    utility strictly remains within formatting and compliance.
-    """
+    """A Sign-in with Ethereum (EIP-4361) message."""
 
     domain: str = Field(regex="^[^/?#]+$")
     """RFC 4501 dns authority that is requesting the signing."""
     address: ChecksumAddress
-    """
-    Ethereum address performing the signing conformant to capitalization encoded
+    """Ethereum address performing the signing conformant to capitalization encoded
     checksum specified in EIP-55 where applicable.
     """
     uri: AnyUrl
@@ -107,40 +126,34 @@ class SiweMessage(BaseModel):
     version: VersionEnum
     """Current version of the message."""
     chain_id: int = Field(gt=0)
-    """
-    EIP-155 Chain ID to which the session is bound, and the network where Contract
+    """EIP-155 Chain ID to which the session is bound, and the network where Contract
     Accounts must be resolved.
     """
     issued_at: CustomDateTime
     """ISO 8601 datetime string of the current time."""
     nonce: str = Field(min_length=8)
-    """
-    Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
-    Use generate_nonce() to generate a secure nonce and store it for verification later.
+    """Randomized token used to prevent replay attacks, at least 8 alphanumeric
+    characters. Use generate_nonce() to generate a secure nonce and store it for
+    verification later.
     """
     statement: Optional[str] = Field(None, regex="^[^\n]+$")
-    """
-    Human-readable ASCII assertion that the user will sign, and it must not contain
+    """Human-readable ASCII assertion that the user will sign, and it must not contain
     `\n`.
     """
     expiration_time: Optional[CustomDateTime] = Field(None)
-    """
-    ISO 8601 datetime string that, if present, indicates when the signed authentication
-    message is no longer valid.
+    """ISO 8601 datetime string that, if present, indicates when the signed
+    authentication message is no longer valid.
     """
     not_before: Optional[CustomDateTime] = Field(None)
-    """
-    ISO 8601 datetime string that, if present, indicates when the signed authentication
-    message will become valid.
+    """ISO 8601 datetime string that, if present, indicates when the signed
+    authentication message will become valid.
     """
     request_id: Optional[str] = Field(None)
-    """
-    System-specific identifier that may be used to uniquely refer to the sign-in
+    """System-specific identifier that may be used to uniquely refer to the sign-in
     request.
     """
     resources: Optional[List[AnyUrl]] = Field(None, min_items=1)
-    """
-    List of information or references to information the user wishes to have resolved
+    """List of information or references to information the user wishes to have resolved
     as part of authentication by the relying party. They are expressed as RFC 3986 URIs
     separated by `\n- `.
     """
@@ -148,11 +161,13 @@ class SiweMessage(BaseModel):
     @validator("address")
     @classmethod
     def address_is_checksum_address(cls, v: str) -> str:
+        """Validate the address follows EIP-55 formatting."""
         if not Web3.is_checksum_address(v):
             raise ValueError("Message `address` must be in EIP-55 format")
         return v
 
     def __init__(self, message: Union[str, Dict[str, Any]], abnf: bool = True):
+        """Construct or parse a message."""
         if isinstance(message, str):
             if abnf:
                 parsed_message = ABNFParsedMessage(message=message)
@@ -170,10 +185,9 @@ class SiweMessage(BaseModel):
             raise ValueError(e)
 
     def prepare_message(self) -> str:
-        """
-        Retrieve an EIP-4361 formatted message for signature. It is recommended to
-        instead use sign_message() which will resolve to the correct method based on the
-        [type] attribute of this object, in case of other formats being implemented.
+        """Serialize to the EIP-4361 format for signing.
+
+        It can then be passed to an EIP-191 signing function.
 
         :return: EIP-4361 formatted message, ready for EIP-191 signing.
         """
@@ -230,9 +244,7 @@ class SiweMessage(BaseModel):
         timestamp: Optional[datetime] = None,
         provider: Optional[HTTPProvider] = None,
     ) -> None:
-        """
-        Verifies the integrity of fields of this SiweMessage object by matching its
-        signature.
+        """Verify the validity of the message and its signature.
 
         :param signature: Signature to check against the current message.
         :param domain: Domain expected to be in the current message.
@@ -281,8 +293,7 @@ class SiweMessage(BaseModel):
 def check_contract_wallet_signature(
     address: ChecksumAddress, message: SignableMessage, signature: str, w3: Web3
 ) -> bool:
-    """
-    Calls the EIP-1271 method for Smart Contract wallets.
+    """Call the EIP-1271 method for a Smart Contract wallet.
 
     :param address: The address of the contract
     :param message: The EIP-4361 formatted message

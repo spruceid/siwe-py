@@ -1,3 +1,5 @@
+"""Regexes for the various fields."""
+
 DOMAIN = "(?P<domain>([^/?#]+)) wants you to sign in with your Ethereum account:\\n"
 ADDRESS = "(?P<address>0x[a-zA-Z0-9]{40})\\n\\n"
 STATEMENT = "((?P<statement>[^\\n]+)\\n)?\\n"
