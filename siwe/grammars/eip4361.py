@@ -27,10 +27,12 @@ class Rule(_Rule):
     """Rules from EIP-4361"""
 
     grammar = [
-        'sign-in-with-ethereum = domain %s" wants you to sign in with your Ethereum account:" LF address LF LF [ '
-        'statement LF ] LF %s"URI: " uri LF %s"Version: " version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF '
-        '%s"Issued At: " issued-at [ LF %s"Expiration Time: " expiration-time ] [ LF %s"Not Before: " not-before ] [ '
-        'LF %s"Request ID: " request-id ] [ LF %s"Resources:" resources ]',
+        'sign-in-with-ethereum = domain %s" wants you to sign in with your Ethereum '
+        'account:" LF address LF LF [ statement LF ] LF %s"URI: " uri LF %s"Version: "'
+        ' version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF %s"Issued At: " '
+        'issued-at [ LF %s"Expiration Time: " expiration-time ] [ LF %s"Not Before: " '
+        'not-before ] [ LF %s"Request ID: " request-id ] [ LF %s"Resources:" resources '
+        "]",
         "domain = authority",
         'address = "0x" 40HEXDIG',
         'statement = 1*( reserved / unreserved / " " )',

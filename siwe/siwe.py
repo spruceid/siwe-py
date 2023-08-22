@@ -75,7 +75,8 @@ class VersionEnum(str, Enum):
 
 class CustomDateTime(str):
     """
-    ISO-8601 datetime string, meant to enable transitivity of deserialisation and serialisation.
+    ISO-8601 datetime string, meant to enable transitivity of deserialisation and
+    serialisation.
     """
 
     @classmethod
@@ -90,38 +91,59 @@ class CustomDateTime(str):
 
 class SiweMessage(BaseModel):
     """
-    A class meant to fully encompass a Sign-in with Ethereum (EIP-4361) message. Its utility strictly remains
-    within formatting and compliance.
+    A class meant to fully encompass a Sign-in with Ethereum (EIP-4361) message. Its
+    utility strictly remains within formatting and compliance.
     """
 
-    domain: str = Field(
-        regex="^[^/?#]+$"
-    )  # RFC 4501 dns authority that is requesting the signing.
-    address: ChecksumAddress  # Ethereum address performing the signing conformant to capitalization encoded checksum specified in EIP-55 where applicable.
-    uri: AnyUrl  # RFC 3986 URI referring to the resource that is the subject of the signing.
-    version: VersionEnum  # Current version of the message.
-    chain_id: int = Field(
-        gt=0
-    )  # EIP-155 Chain ID to which the session is bound, and the network where Contract Accounts must be resolved.
-    issued_at: CustomDateTime  # ISO 8601 datetime string of the current time.
-    nonce: str = Field(
-        min_length=8
-    )  # Randomized token used to prevent replay attacks, at least 8 alphanumeric characters. Use generate_nonce() to generate a secure nonce and store it for verification later.
-    statement: Optional[str] = Field(
-        None, regex="^[^\n]+$"
-    )  # Human-readable ASCII assertion that the user will sign, and it must not contain `\n`.
-    expiration_time: Optional[CustomDateTime] = Field(
-        None
-    )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message is no longer valid.
-    not_before: Optional[CustomDateTime] = Field(
-        None
-    )  # ISO 8601 datetime string that, if present, indicates when the signed authentication message will become valid.
-    request_id: Optional[str] = Field(
-        None
-    )  # System-specific identifier that may be used to uniquely refer to the sign-in request.
-    resources: Optional[List[AnyUrl]] = Field(
-        None, min_items=1
-    )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
+    domain: str = Field(regex="^[^/?#]+$")
+    """RFC 4501 dns authority that is requesting the signing."""
+    address: ChecksumAddress
+    """
+    Ethereum address performing the signing conformant to capitalization encoded
+    checksum specified in EIP-55 where applicable.
+    """
+    uri: AnyUrl
+    """RFC 3986 URI referring to the resource that is the subject of the signing."""
+    version: VersionEnum
+    """Current version of the message."""
+    chain_id: int = Field(gt=0)
+    """
+    EIP-155 Chain ID to which the session is bound, and the network where Contract
+    Accounts must be resolved.
+    """
+    issued_at: CustomDateTime
+    """ISO 8601 datetime string of the current time."""
+    nonce: str = Field(min_length=8)
+    """
+    Randomized token used to prevent replay attacks, at least 8 alphanumeric characters.
+    Use generate_nonce() to generate a secure nonce and store it for verification later.
+    """
+    statement: Optional[str] = Field(None, regex="^[^\n]+$")
+    """
+    Human-readable ASCII assertion that the user will sign, and it must not contain
+    `\n`.
+    """
+    expiration_time: Optional[CustomDateTime] = Field(None)
+    """
+    ISO 8601 datetime string that, if present, indicates when the signed authentication
+    message is no longer valid.
+    """
+    not_before: Optional[CustomDateTime] = Field(None)
+    """
+    ISO 8601 datetime string that, if present, indicates when the signed authentication
+    message will become valid.
+    """
+    request_id: Optional[str] = Field(None)
+    """
+    System-specific identifier that may be used to uniquely refer to the sign-in
+    request.
+    """
+    resources: Optional[List[AnyUrl]] = Field(None, min_items=1)
+    """
+    List of information or references to information the user wishes to have resolved
+    as part of authentication by the relying party. They are expressed as RFC 3986 URIs
+    separated by `\n- `.
+    """
 
     @validator("address")
     @classmethod
@@ -149,9 +171,9 @@ class SiweMessage(BaseModel):
 
     def prepare_message(self) -> str:
         """
-        Retrieve an EIP-4361 formatted message for signature. It is recommended to instead use
-        sign_message() which will resolve to the correct method based on the [type] attribute
-        of this object, in case of other formats being implemented.
+        Retrieve an EIP-4361 formatted message for signature. It is recommended to
+        instead use sign_message() which will resolve to the correct method based on the
+        [type] attribute of this object, in case of other formats being implemented.
 
         :return: EIP-4361 formatted message, ready for EIP-191 signing.
         """
@@ -209,16 +231,18 @@ class SiweMessage(BaseModel):
         provider: Optional[HTTPProvider] = None,
     ) -> None:
         """
-        Verifies the integrity of fields of this SiweMessage object by matching its signature.
+        Verifies the integrity of fields of this SiweMessage object by matching its
+        signature.
 
         :param signature: Signature to check against the current message.
         :param domain: Domain expected to be in the current message.
         :param nonce: Nonce expected to be in the current message.
-        :param timestamp: Timestamp used to verify the expiry date and other dates fields. Uses the current time by
-        default.
-        :param provider: A Web3 provider able to perform a contract check, this is required if support for Smart
-        Contract Wallets that implement EIP-1271 is needed. It is also configurable with the environment
-        variable `WEB3_HTTP_PROVIDER_URI`
+        :param timestamp: Timestamp used to verify the expiry date and other dates
+        fields. Uses the current time by default.
+        :param provider: A Web3 provider able to perform a contract check, this is
+        required if support for Smart Contract Wallets that implement EIP-1271 is
+        needed. It is also configurable with the environment variable
+        `WEB3_HTTP_PROVIDER_URI`
         :return: None if the message is valid and raises an exception otherwise
         """
         message = encode_defunct(text=self.prepare_message())
