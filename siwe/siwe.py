@@ -281,13 +281,13 @@ class SiweMessage(BaseModel):
         except eth_utils.exceptions.ValidationError:
             raise InvalidSignature from None
 
-        if address != self.address:
-            if provider is None:
-                raise InvalidSignature()
-            elif not check_contract_wallet_signature(
+        if address != self.address and (
+            provider is None
+            or not check_contract_wallet_signature(
                 address=self.address, message=message, signature=signature, w3=w3
-            ):
-                raise InvalidSignature()
+            )
+        ):
+            raise InvalidSignature()
 
 
 def check_contract_wallet_signature(

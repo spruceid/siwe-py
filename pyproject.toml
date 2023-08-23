@@ -49,6 +49,7 @@ select = [
   "B",   # flake8-bugbear
   "RUF", # ruff specific
   "PT",  # flake8-pytest-style
+  "SIM", # flake8-simplify
   "D",   # pydocstyle
 ]
 
