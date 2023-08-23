@@ -1,3 +1,5 @@
+"""Library for EIP-4361 Sign-In with Ethereum."""
+
 # flake8: noqa: F401
 from .siwe import (
     DomainMismatch,

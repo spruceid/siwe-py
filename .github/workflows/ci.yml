@@ -29,7 +29,7 @@ jobs:
         run: poetry run pytest -v
       - name: Fmt
         run: poetry run black . --check
-      - name: Flake8
-        run: poetry run flake8
+      - name: Ruff
+        run: poetry run ruff check .
       - uses: jakebailey/pyright-action@v1
         if: ${{ matrix.os != 'windows-latest' }}

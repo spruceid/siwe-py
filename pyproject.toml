@@ -25,8 +25,7 @@ pydantic = "^2.1.1"
 pytest = "^6.2.5"
 black = "^22.3.0"
 pyhumps = "^3.5.0"
-flake8 = "^4.0.1"
-isort = "^5.10.1"
+ruff = "^0.0.285"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -38,3 +37,20 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
 typeCheckingMode = "basic"
+
+[tool.ruff]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "C",   # flake8-comprehensions
+  "B",   # flake8-bugbear
+  "RUF", # ruff specific
+  "PT",  # flake8-pytest-style
+  "SIM", # flake8-simplify
+  "D",   # pydocstyle
+]
+
+include = ["siwe/**"]
+ignore = ["D203", "D213"]
