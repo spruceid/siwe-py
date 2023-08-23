@@ -31,5 +31,7 @@ jobs:
         run: poetry run black . --check
       - name: Ruff
         run: poetry run ruff check .
+      - name: Deptry
+        run: poetry run deptry .
       - uses: jakebailey/pyright-action@v1
         if: ${{ matrix.os != 'windows-latest' }}
