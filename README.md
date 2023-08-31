@@ -1,6 +1,6 @@
 # Sign-In with Ethereum
 
-This package provides a Python implementation of EIP-4631: Sign In With Ethereum.
+This package provides a Python implementation of EIP-4361: Sign In With Ethereum.
 
 ## Installation
 
