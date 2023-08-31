@@ -143,17 +143,13 @@ class SiweMessage(BaseModel):
     )  # List of information or references to information the user wishes to have resolved as part of authentication by the relying party. They are expressed as RFC 3986 URIs separated by `\n- `.
 
     @classmethod
-    def from_message(cls, message: Union[str, dict], abnf: bool = True) -> "SiweMessage":
-        if isinstance(message, str):
-            if abnf:
-                parsed_message = ABNFParsedMessage(message=message)
-            else:
-                parsed_message = RegExpParsedMessage(message=message)
-            message_dict = parsed_message.__dict__
-        elif isinstance(message, dict):
-            message_dict = message
+    def from_message(cls, message: str, abnf: bool = True) -> "SiweMessage":
+        if abnf:
+            parsed_message = ABNFParsedMessage(message=message)
         else:
-            raise TypeError
+            parsed_message = RegExpParsedMessage(message=message)
+        message_dict = parsed_message.__dict__
+        
         # TODO There is some redundancy in the checks when deserialising a message.
         try:
             cls(**message_dict)
