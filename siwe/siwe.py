@@ -148,11 +148,10 @@ class SiweMessage(BaseModel):
             parsed_message = ABNFParsedMessage(message=message)
         else:
             parsed_message = RegExpParsedMessage(message=message)
-        message_dict = parsed_message.__dict__
-        
+
         # TODO There is some redundancy in the checks when deserialising a message.
         try:
-            cls(**message_dict)
+            return cls(**parsed_message.__dict__)
         except ValidationError as e:
             raise ValueError(e)
 
