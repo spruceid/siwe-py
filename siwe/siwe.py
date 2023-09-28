@@ -108,7 +108,7 @@ class CustomDateTime(str):
     @classmethod
     def validate(cls, v: str):
         """Validate the format."""
-        cls.date = isoparse(v)
+        isoparse(v)
         return cls(v)
 
 
@@ -268,10 +268,10 @@ class SiweMessage(BaseModel):
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
         if (
             self.expiration_time is not None
-            and verification_time >= self.expiration_time.date
+            and verification_time >= isoparse(self.expiration_time)
         ):
             raise ExpiredMessage()
-        if self.not_before is not None and verification_time <= self.not_before.date:
+        if self.not_before is not None and verification_time <= isoparse(self.not_before):
             raise NotYetValidMessage()
 
         try:
