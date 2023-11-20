@@ -100,6 +100,10 @@ class CustomDateTime(str):
     Meant to enable transitivity of deserialisation and serialisation.
     """
 
+    @property
+    def date(self):
+        return isoparse(self)
+
     @classmethod
     def __get_validators__(cls):
         """Retrieve the validate method."""
@@ -108,7 +112,6 @@ class CustomDateTime(str):
     @classmethod
     def validate(cls, v: str):
         """Validate the format."""
-        cls.date = isoparse(v)
         return cls(v)
 
 
