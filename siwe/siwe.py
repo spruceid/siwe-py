@@ -7,11 +7,17 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import eth_utils
-from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    Field,
+    NonNegativeInt,
+    ValidationError,
+    field_validator,
+)
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -94,28 +100,14 @@ class VersionEnum(str, Enum):
         return self.value
 
 
-class CustomDateTime(str):
-    """ISO-8601 datetime string.
-
-    Meant to enable transitivity of deserialisation and serialisation.
-    """
-
-    @classmethod
-    def __get_validators__(cls):
-        """Retrieve the validate method."""
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v: str):
-        """Validate the format."""
-        cls.date = isoparse(v)
-        return cls(v)
+def _iso8601_format(value: datetime) -> str:
+    return value.isoformat().replace("+00:00", ".000Z")
 
 
 class SiweMessage(BaseModel):
     """A Sign-in with Ethereum (EIP-4361) message."""
 
-    domain: str = Field(regex="^[^/?#]+$")
+    domain: str = Field(pattern="^[^/?#]+$")
     """RFC 4501 dns authority that is requesting the signing."""
     address: ChecksumAddress
     """Ethereum address performing the signing conformant to capitalization encoded
@@ -125,40 +117,40 @@ class SiweMessage(BaseModel):
     """RFC 3986 URI referring to the resource that is the subject of the signing."""
     version: VersionEnum
     """Current version of the message."""
-    chain_id: int = Field(gt=0)
+    chain_id: NonNegativeInt
     """EIP-155 Chain ID to which the session is bound, and the network where Contract
     Accounts must be resolved.
     """
-    issued_at: CustomDateTime
+    issued_at: datetime
     """ISO 8601 datetime string of the current time."""
     nonce: str = Field(min_length=8)
     """Randomized token used to prevent replay attacks, at least 8 alphanumeric
     characters. Use generate_nonce() to generate a secure nonce and store it for
     verification later.
     """
-    statement: Optional[str] = Field(None, regex="^[^\n]+$")
+    statement: Optional[str] = Field(None, pattern="^[^\n]+$")
     """Human-readable ASCII assertion that the user will sign, and it must not contain
     `\n`.
     """
-    expiration_time: Optional[CustomDateTime] = Field(None)
+    expiration_time: Optional[datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message is no longer valid.
     """
-    not_before: Optional[CustomDateTime] = Field(None)
+    not_before: Optional[datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message will become valid.
     """
-    request_id: Optional[str] = Field(None)
+    request_id: Optional[str] = None
     """System-specific identifier that may be used to uniquely refer to the sign-in
     request.
     """
-    resources: Optional[List[AnyUrl]] = Field(None, min_items=1)
+    resources: Optional[List[AnyUrl]] = None
     """List of information or references to information the user wishes to have resolved
     as part of authentication by the relying party. They are expressed as RFC 3986 URIs
     separated by `\n- `.
     """
 
-    @validator("address")
+    @field_validator("address")
     @classmethod
     def address_is_checksum_address(cls, v: str) -> str:
         """Validate the address follows EIP-55 formatting."""
@@ -205,15 +197,17 @@ class SiweMessage(BaseModel):
 
         suffix_array = [uri_field, version_field, chain_field, nonce_field]
 
-        issued_at_field = f"Issued At: {self.issued_at}"
+        issued_at_field = f"Issued At: {_iso8601_format(self.issued_at)}"
         suffix_array.append(issued_at_field)
 
         if self.expiration_time:
-            expiration_time_field = f"Expiration Time: {self.expiration_time}"
+            expiration_time_field = (
+                f"Expiration Time: {_iso8601_format(self.expiration_time)}"
+            )
             suffix_array.append(expiration_time_field)
 
         if self.not_before:
-            not_before_field = f"Not Before: {self.not_before}"
+            not_before_field = f"Not Before: {_iso8601_format(self.not_before)}"
             suffix_array.append(not_before_field)
 
         if self.request_id:
@@ -268,10 +262,10 @@ class SiweMessage(BaseModel):
         verification_time = datetime.now(UTC) if timestamp is None else timestamp
         if (
             self.expiration_time is not None
-            and verification_time >= self.expiration_time.date
+            and verification_time >= self.expiration_time
         ):
             raise ExpiredMessage()
-        if self.not_before is not None and verification_time <= self.not_before.date:
+        if self.not_before is not None and verification_time <= self.not_before:
             raise NotYetValidMessage()
 
         try:

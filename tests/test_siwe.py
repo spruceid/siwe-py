@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import pytest
 from dateutil.parser import isoparse
@@ -6,7 +7,7 @@ from eth_account import Account, messages
 from humps import decamelize
 from web3 import HTTPProvider
 
-from siwe.siwe import SiweMessage, VerificationError
+from siwe.siwe import SiweMessage, VerificationError, _iso8601_format
 
 BASE_TESTS = "tests/siwe/test/"
 with open(BASE_TESTS + "parsing_positive.json", "r") as f:
@@ -33,7 +34,9 @@ class TestMessageParsing:
         siwe_message = SiweMessage(message=test["message"], abnf=abnf)
         for key, value in test["fields"].items():
             v = getattr(siwe_message, key)
-            if not isinstance(v, int) and not isinstance(v, list):
+            if isinstance(v, datetime):
+                v = _iso8601_format(v)
+            elif not isinstance(v, int) and not isinstance(v, list):
                 v = str(v)
             assert v == value
 
