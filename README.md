@@ -18,22 +18,28 @@ SIWE provides a `SiweMessage` class which implements EIP-4361.
 
 Parsing is done by initializing a `SiweMessage` object with an EIP-4361 formatted string:
 
-``` python
+```python
 from siwe import SiweMessage
-message: SiweMessage = SiweMessage(message=eip_4361_string)
+message: SiweMessage = SiweMessage.from_message(message=eip_4361_string)
 ```
 
 Alternatively, initialization of a `SiweMessage` object can be done with a dictionary containing expected attributes:
 
-``` python
-message: SiweMessage = SiweMessage(message={"domain": "login.xyz", "address": "0x1234...", ...})
+```python
+message: SiweMessage = SiweMessage.from_message(message={"domain": "login.xyz", "address": "0x1234...", ...})
+```
+
+Or to initialize a `SiweMessage` as a `pydantic.BaseModel` right away:
+
+```python
+message: SiweMessage = SiweMessage(domain="login.xyz", address="0x1234...", ...)
 ```
 
 ### Verifying and Authenticating a SIWE Message
 
 Verification and authentication is performed via EIP-191, using the `address` field of the `SiweMessage` as the expected signer. The validate method checks message structural integrity, signature address validity, and time-based validity attributes.
 
-``` python
+```python
 try:
     message.verify(signature="0x...")
     # You can also specify other checks (e.g. the nonce or domain expected).
@@ -45,7 +51,7 @@ except siwe.ValidationError:
 
 `SiweMessage` instances can also be serialized as their EIP-4361 string representations via the `prepare_message` method:
 
-``` python
+```python
 print(message.prepare_message())
 ```
 
@@ -53,7 +59,7 @@ print(message.prepare_message())
 
 Parsing and verifying a `SiweMessage` is easy:
 
-``` python
+```python
 try:
     message: SiweMessage = SiweMessage(message=eip_4361_string)
     message.verify(signature, nonce="abcdef", domain="example.com"):

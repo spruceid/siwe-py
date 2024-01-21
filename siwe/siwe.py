@@ -166,21 +166,16 @@ class SiweMessage(BaseModel):
             raise ValueError("Message `address` must be in EIP-55 format")
         return v
 
-    def __init__(self, message: Union[str, Dict[str, Any]], abnf: bool = True):
-        """Construct or parse a message."""
-        if isinstance(message, str):
-            if abnf:
-                parsed_message = ABNFParsedMessage(message=message)
-            else:
-                parsed_message = RegExpParsedMessage(message=message)
-            message_dict = parsed_message.__dict__
-        elif isinstance(message, dict):
-            message_dict = message
+    @classmethod
+    def from_message(cls, message: str, abnf: bool = True) -> "SiweMessage":
+        if abnf:
+            parsed_message = ABNFParsedMessage(message=message)
         else:
-            raise TypeError
+            parsed_message = RegExpParsedMessage(message=message)
+
         # TODO There is some redundancy in the checks when deserialising a message.
         try:
-            super().__init__(**message_dict)
+            return cls(**parsed_message.__dict__)
         except ValidationError as e:
             raise ValueError from e
 
