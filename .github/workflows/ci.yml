@@ -28,7 +28,7 @@ jobs:
       - name: Test
         run: poetry run pytest -v
       - name: Fmt
-        run: poetry run black . --check
+        run: poetry run ruff format . --check
       - name: Ruff
         run: poetry run ruff check .
       - name: Deptry
