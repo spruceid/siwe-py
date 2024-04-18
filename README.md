@@ -20,19 +20,13 @@ Parsing is done by initializing a `SiweMessage` object with an EIP-4361 formatte
 
 ```python
 from siwe import SiweMessage
-message: SiweMessage = SiweMessage.from_message(message=eip_4361_string)
-```
-
-Alternatively, initialization of a `SiweMessage` object can be done with a dictionary containing expected attributes:
-
-```python
-message: SiweMessage = SiweMessage.from_message(message={"domain": "login.xyz", "address": "0x1234...", ...})
+message = SiweMessage.from_message(message=eip_4361_string)
 ```
 
 Or to initialize a `SiweMessage` as a `pydantic.BaseModel` right away:
 
 ```python
-message: SiweMessage = SiweMessage(domain="login.xyz", address="0x1234...", ...)
+message = SiweMessage(domain="login.xyz", address="0x1234...", ...)
 ```
 
 ### Verifying and Authenticating a SIWE Message
