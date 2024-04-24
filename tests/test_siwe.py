@@ -128,3 +128,7 @@ class TestMessageRoundTrip:
             messages.encode_defunct(text=message.prepare_message())
         ).signature
         message.verify(signature)
+
+    def test_schema_generation(self):
+        # NOTE: Needed so that FastAPI/OpenAPI json schema works
+        SiweMessage.model_json_schema()
