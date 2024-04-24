@@ -5,13 +5,14 @@ import string
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Union
+from typing_extensions import Annotated
 
 import eth_utils
 from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic import AnyUrl, BaseModel, Field, ValidationError, NonNegativeInt, field_validator
+from pydantic import AnyUrl, BaseModel, Field, ValidationError, NonNegativeInt, field_validator, TypeAdapter, BeforeValidator
 
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
@@ -94,6 +95,13 @@ class VersionEnum(str, Enum):
         """EIP-4361 representation of the enum field."""
         return self.value
 
+# NOTE: Do not override the original uri string, just do validation
+# https://github.com/pydantic/pydantic/issues/7186#issuecomment-1874338146
+AnyUrlTypeAdapter = TypeAdapter(AnyUrl)
+AnyUrlStr = Annotated[
+    str,
+    BeforeValidator(lambda value: AnyUrlTypeAdapter.validate_python(value) and value),
+]
 
 class CustomDateTime(str):
     """ISO-8601 datetime string.
@@ -122,7 +130,7 @@ class SiweMessage(BaseModel):
     """Ethereum address performing the signing conformant to capitalization encoded
     checksum specified in EIP-55 where applicable.
     """
-    uri: AnyUrl
+    uri: AnyUrlStr
     """RFC 3986 URI referring to the resource that is the subject of the signing."""
     version: VersionEnum
     """Current version of the message."""
@@ -153,7 +161,7 @@ class SiweMessage(BaseModel):
     """System-specific identifier that may be used to uniquely refer to the sign-in
     request.
     """
-    resources: Optional[List[AnyUrl]] = Field(None, min_items=1)
+    resources: Optional[List[AnyUrlStr]] = None
     """List of information or references to information the user wishes to have resolved
     as part of authentication by the relying party. They are expressed as RFC 3986 URIs
     separated by `\n- `.
