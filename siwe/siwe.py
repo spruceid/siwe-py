@@ -2,17 +2,16 @@
 
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Union
 from typing_extensions import Annotated
 
 import eth_utils
-from dateutil.parser import isoparse
-from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
 from pydantic import AnyUrl, BaseModel, Field, ValidationError, NonNegativeInt, field_validator, TypeAdapter, BeforeValidator
+from pydantic_core import core_schema
 
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
@@ -103,22 +102,32 @@ AnyUrlStr = Annotated[
     BeforeValidator(lambda value: AnyUrlTypeAdapter.validate_python(value) and value),
 ]
 
-class CustomDateTime(str):
-    """ISO-8601 datetime string.
+def datetime_from_iso8601_string(val: str) -> datetime:
+    return datetime.fromisoformat(val.replace(".000Z", "Z").replace("Z", "+00:00"))
 
-    Meant to enable transitivity of deserialisation and serialisation.
-    """
+
+# NOTE: Do not override the original string, but ensure we do timestamp validation
+class ISO8601Datetime(str):
+    def __init__(self, val: str):
+        # NOTE: `self` is already this class, we are just running our validation here on `val`
+        datetime_from_iso8601_string(val)
 
     @classmethod
-    def __get_validators__(cls):
-        """Retrieve the validate method."""
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, source, handler):
+        return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
 
     @classmethod
-    def validate(cls, v: str):
-        """Validate the format."""
-        cls.date = isoparse(v)
-        return cls(v)
+    def from_datetime(cls, dt: datetime, timespec: str = "milliseconds") -> "ISO8601Datetime":
+        # NOTE: Only a useful classmethod for creating these objects
+        return dt.astimezone(tz=timezone.utc).isoformat(timespec=timespec).replace("+00:00", "Z")
+
+    @property
+    def _datetime(self) -> datetime:
+        return datetime_from_iso8601_string(self)
+
+
+def utc_now() -> datetime:
+    return datetime.now(tz=timezone.utc)
 
 
 class SiweMessage(BaseModel):
@@ -138,7 +147,7 @@ class SiweMessage(BaseModel):
     """EIP-155 Chain ID to which the session is bound, and the network where Contract
     Accounts must be resolved.
     """
-    issued_at: CustomDateTime
+    issued_at: ISO8601Datetime
     """ISO 8601 datetime string of the current time."""
     nonce: str = Field(min_length=8)
     """Randomized token used to prevent replay attacks, at least 8 alphanumeric
@@ -149,11 +158,11 @@ class SiweMessage(BaseModel):
     """Human-readable ASCII assertion that the user will sign, and it must not contain
     `\n`.
     """
-    expiration_time: Optional[CustomDateTime] = Field(None)
+    expiration_time: Optional[ISO8601Datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message is no longer valid.
     """
-    not_before: Optional[CustomDateTime] = Field(None)
+    not_before: Optional[ISO8601Datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message will become valid.
     """
@@ -274,13 +283,13 @@ class SiweMessage(BaseModel):
         if nonce is not None and self.nonce != nonce:
             raise NonceMismatch()
 
-        verification_time = datetime.now(UTC) if timestamp is None else timestamp
+        verification_time = utc_now() if timestamp is None else timestamp
         if (
             self.expiration_time is not None
-            and verification_time >= self.expiration_time.date
+            and verification_time >= self.expiration_time._datetime
         ):
             raise ExpiredMessage()
-        if self.not_before is not None and verification_time <= self.not_before.date:
+        if self.not_before is not None and verification_time <= self.not_before._datetime:
             raise NotYetValidMessage()
 
         try:
