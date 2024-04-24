@@ -5,6 +5,7 @@ from dateutil.parser import isoparse
 from eth_account import Account, messages
 from humps import decamelize
 from web3 import HTTPProvider
+from pydantic import ValidationError
 
 from siwe.siwe import SiweMessage, VerificationError
 
@@ -51,7 +52,7 @@ class TestMessageParsing:
         [(test_name, test) for test_name, test in parsing_negative_objects.items()],
     )
     def test_invalid_object_message(self, test_name, test):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SiweMessage(message=test)
 
 
@@ -97,7 +98,7 @@ class TestMessageVerification:
             "invalidnot_before",
             "invalidissued_at",
         ]:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValidationError):
                 siwe_message = SiweMessage(message=test)
             return
         siwe_message = SiweMessage(message=test)

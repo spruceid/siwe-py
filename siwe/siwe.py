@@ -183,10 +183,7 @@ class SiweMessage(BaseModel):
             raise TypeError(f"Unhandable message type: '{type(message)}'.")
 
         # TODO There is some redundancy in the checks when deserialising a message.
-        try:
-            super().__init__(**message_dict)
-        except ValidationError as e:
-            raise ValueError from e
+        super().__init__(**message_dict)
 
     def prepare_message(self) -> str:
         """Serialize to the EIP-4361 format for signing.
