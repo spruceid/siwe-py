@@ -175,10 +175,13 @@ class SiweMessage(BaseModel):
             else:
                 parsed_message = RegExpParsedMessage(message=message)
             message_dict = parsed_message.__dict__
+
         elif isinstance(message, dict):
             message_dict = message
+
         else:
-            raise TypeError
+            raise TypeError(f"Unhandable message type: '{type(message)}'.")
+
         # TODO There is some redundancy in the checks when deserialising a message.
         try:
             super().__init__(**message_dict)
