@@ -11,7 +11,8 @@ from dateutil.parser import isoparse
 from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError, validator
+from pydantic import AnyUrl, BaseModel, Field, ValidationError, NonNegativeInt, field_validator
+
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -115,7 +116,7 @@ class CustomDateTime(str):
 class SiweMessage(BaseModel):
     """A Sign-in with Ethereum (EIP-4361) message."""
 
-    domain: str = Field(regex="^[^/?#]+$")
+    domain: str = Field(pattern="^[^/?#]+$")
     """RFC 4501 dns authority that is requesting the signing."""
     address: ChecksumAddress
     """Ethereum address performing the signing conformant to capitalization encoded
@@ -125,7 +126,7 @@ class SiweMessage(BaseModel):
     """RFC 3986 URI referring to the resource that is the subject of the signing."""
     version: VersionEnum
     """Current version of the message."""
-    chain_id: int = Field(gt=0)
+    chain_id: NonNegativeInt
     """EIP-155 Chain ID to which the session is bound, and the network where Contract
     Accounts must be resolved.
     """
@@ -136,7 +137,7 @@ class SiweMessage(BaseModel):
     characters. Use generate_nonce() to generate a secure nonce and store it for
     verification later.
     """
-    statement: Optional[str] = Field(None, regex="^[^\n]+$")
+    statement: Optional[str] = Field(None, pattern="^[^\n]+$")
     """Human-readable ASCII assertion that the user will sign, and it must not contain
     `\n`.
     """
@@ -148,7 +149,7 @@ class SiweMessage(BaseModel):
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message will become valid.
     """
-    request_id: Optional[str] = Field(None)
+    request_id: Optional[str] = None
     """System-specific identifier that may be used to uniquely refer to the sign-in
     request.
     """
@@ -158,7 +159,7 @@ class SiweMessage(BaseModel):
     separated by `\n- `.
     """
 
-    @validator("address")
+    @field_validator("address")
     @classmethod
     def address_is_checksum_address(cls, v: str) -> str:
         """Validate the address follows EIP-55 formatting."""
