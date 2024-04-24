@@ -5,14 +5,21 @@ import string
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Union
-from typing_extensions import Annotated
 
 import eth_utils
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic import AnyUrl, BaseModel, Field, ValidationError, NonNegativeInt, field_validator, TypeAdapter, BeforeValidator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    NonNegativeInt,
+    TypeAdapter,
+    field_validator,
+)
 from pydantic_core import core_schema
-
+from typing_extensions import Annotated
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -94,6 +101,7 @@ class VersionEnum(str, Enum):
         """EIP-4361 representation of the enum field."""
         return self.value
 
+
 # NOTE: Do not override the original uri string, just do validation
 # https://github.com/pydantic/pydantic/issues/7186#issuecomment-1874338146
 AnyUrlTypeAdapter = TypeAdapter(AnyUrl)
@@ -102,24 +110,39 @@ AnyUrlStr = Annotated[
     BeforeValidator(lambda value: AnyUrlTypeAdapter.validate_python(value) and value),
 ]
 
+
 def datetime_from_iso8601_string(val: str) -> datetime:
+    """Convert an ISO-8601 Datetime string into a valid datetime object."""
     return datetime.fromisoformat(val.replace(".000Z", "Z").replace("Z", "+00:00"))
 
 
 # NOTE: Do not override the original string, but ensure we do timestamp validation
 class ISO8601Datetime(str):
+    """A special field class used to denote ISO-8601 Datetime strings."""
+
     def __init__(self, val: str):
-        # NOTE: `self` is already this class, we are just running our validation here on `val`
+        """Validate ISO-8601 string."""
+        # NOTE: `self` is already this class, we are just running our validation here
         datetime_from_iso8601_string(val)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source, handler):
-        return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
+        """Create valid pydantic schema object for this type."""
+        return core_schema.no_info_after_validator_function(
+            cls, core_schema.str_schema()
+        )
 
     @classmethod
-    def from_datetime(cls, dt: datetime, timespec: str = "milliseconds") -> "ISO8601Datetime":
+    def from_datetime(
+        cls, dt: datetime, timespec: str = "milliseconds"
+    ) -> "ISO8601Datetime":
+        """Create an ISO-8601 formatted string from a datetime object."""
         # NOTE: Only a useful classmethod for creating these objects
-        return dt.astimezone(tz=timezone.utc).isoformat(timespec=timespec).replace("+00:00", "Z")
+        return (
+            dt.astimezone(tz=timezone.utc)
+            .isoformat(timespec=timespec)
+            .replace("+00:00", "Z")
+        )
 
     @property
     def _datetime(self) -> datetime:
@@ -127,6 +150,7 @@ class ISO8601Datetime(str):
 
 
 def utc_now() -> datetime:
+    """Get the current datetime as UTC timezone."""
     return datetime.now(tz=timezone.utc)
 
 
@@ -289,7 +313,10 @@ class SiweMessage(BaseModel):
             and verification_time >= self.expiration_time._datetime
         ):
             raise ExpiredMessage()
-        if self.not_before is not None and verification_time <= self.not_before._datetime:
+        if (
+            self.not_before is not None
+            and verification_time <= self.not_before._datetime
+        ):
             raise NotYetValidMessage()
 
         try:
