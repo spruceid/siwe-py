@@ -138,7 +138,7 @@ class ISO8601Datetime(str):
     ) -> "ISO8601Datetime":
         """Create an ISO-8601 formatted string from a datetime object."""
         # NOTE: Only a useful classmethod for creating these objects
-        return (
+        return ISO8601Datetime(
             dt.astimezone(tz=timezone.utc)
             .isoformat(timespec=timespec)
             .replace("+00:00", "Z")
