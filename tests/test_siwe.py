@@ -30,7 +30,7 @@ class TestMessageParsing:
         [(test_name, test) for test_name, test in parsing_positive.items()],
     )
     def test_valid_message(self, abnf, test_name, test):
-        siwe_message = SiweMessage(message=test["message"], abnf=abnf)
+        siwe_message = SiweMessage.from_message(message=test["message"], abnf=abnf)
         for key, value in test["fields"].items():
             v = getattr(siwe_message, key)
             if not (isinstance(v, int) or isinstance(v, list) or v is None):
@@ -44,7 +44,7 @@ class TestMessageParsing:
     )
     def test_invalid_message(self, abnf, test_name, test):
         with pytest.raises(ValueError):
-            SiweMessage(message=test, abnf=abnf)
+            SiweMessage.from_message(message=test, abnf=abnf)
 
     @pytest.mark.parametrize(
         "test_name,test",
@@ -52,7 +52,7 @@ class TestMessageParsing:
     )
     def test_invalid_object_message(self, test_name, test):
         with pytest.raises(ValidationError):
-            SiweMessage(message=test)
+            SiweMessage(**test)
 
 
 class TestMessageGeneration:
@@ -61,7 +61,7 @@ class TestMessageGeneration:
         [(test_name, test) for test_name, test in parsing_positive.items()],
     )
     def test_valid_message(self, test_name, test):
-        siwe_message = SiweMessage(message=test["fields"])
+        siwe_message = SiweMessage(**test["fields"])
         assert siwe_message.prepare_message() == test["message"]
 
 
@@ -71,7 +71,7 @@ class TestMessageVerification:
         [(test_name, test) for test_name, test in verification_positive.items()],
     )
     def test_valid_message(self, test_name, test):
-        siwe_message = SiweMessage(message=test)
+        siwe_message = SiweMessage(**test)
         timestamp = datetime_from_iso8601_string(test["time"]) if "time" in test else None
         siwe_message.verify(test["signature"], timestamp=timestamp)
 
@@ -81,7 +81,7 @@ class TestMessageVerification:
     )
     def test_eip1271_message(self, test_name, test):
         provider = HTTPProvider(endpoint_uri="https://cloudflare-eth.com")
-        siwe_message = SiweMessage(message=test["message"])
+        siwe_message = SiweMessage.from_message(message=test["message"])
         siwe_message.verify(test["signature"], provider=provider)
 
     @pytest.mark.parametrize(
@@ -98,9 +98,9 @@ class TestMessageVerification:
             "invalidissued_at",
         ]:
             with pytest.raises(ValidationError):
-                siwe_message = SiweMessage(message=test)
+                siwe_message = SiweMessage(**test)
             return
-        siwe_message = SiweMessage(message=test)
+        siwe_message = SiweMessage(**test)
         domain_binding = test.get("domain_binding")
         match_nonce = test.get("match_nonce")
         timestamp = datetime_from_iso8601_string(test["time"]) if "time" in test else None
@@ -122,7 +122,7 @@ class TestMessageRoundTrip:
         [(test_name, test) for test_name, test in parsing_positive.items()],
     )
     def test_message_round_trip(self, test_name, test):
-        message = SiweMessage(test["fields"])
+        message = SiweMessage(**test["fields"])
         message.address = self.account.address
         signature = self.account.sign_message(
             messages.encode_defunct(text=message.prepare_message())
