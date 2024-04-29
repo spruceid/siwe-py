@@ -2,16 +2,24 @@
 
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Union
 
 import eth_utils
-from dateutil.parser import isoparse
-from dateutil.tz import UTC
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
 from eth_typing import ChecksumAddress
-from pydantic.v1 import AnyUrl, BaseModel, Field, ValidationError, validator
+from pydantic import (
+    AnyUrl,
+    BaseModel,
+    BeforeValidator,
+    Field,
+    NonNegativeInt,
+    TypeAdapter,
+    field_validator,
+)
+from pydantic_core import core_schema
+from typing_extensions import Annotated
 from web3 import HTTPProvider, Web3
 from web3.exceptions import BadFunctionCallOutput
 
@@ -94,71 +102,105 @@ class VersionEnum(str, Enum):
         return self.value
 
 
-class CustomDateTime(str):
-    """ISO-8601 datetime string.
+# NOTE: Do not override the original uri string, just do validation
+# https://github.com/pydantic/pydantic/issues/7186#issuecomment-1874338146
+AnyUrlTypeAdapter = TypeAdapter(AnyUrl)
+AnyUrlStr = Annotated[
+    str,
+    BeforeValidator(lambda value: AnyUrlTypeAdapter.validate_python(value) and value),
+]
 
-    Meant to enable transitivity of deserialisation and serialisation.
-    """
+
+def datetime_from_iso8601_string(val: str) -> datetime:
+    """Convert an ISO-8601 Datetime string into a valid datetime object."""
+    return datetime.fromisoformat(val.replace(".000Z", "Z").replace("Z", "+00:00"))
+
+
+# NOTE: Do not override the original string, but ensure we do timestamp validation
+class ISO8601Datetime(str):
+    """A special field class used to denote ISO-8601 Datetime strings."""
+
+    def __init__(self, val: str):
+        """Validate ISO-8601 string."""
+        # NOTE: `self` is already this class, we are just running our validation here
+        datetime_from_iso8601_string(val)
 
     @classmethod
-    def __get_validators__(cls):
-        """Retrieve the validate method."""
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, source, handler):
+        """Create valid pydantic schema object for this type."""
+        return core_schema.no_info_after_validator_function(
+            cls, core_schema.str_schema()
+        )
 
     @classmethod
-    def validate(cls, v: str):
-        """Validate the format."""
-        cls.date = isoparse(v)
-        return cls(v)
+    def from_datetime(
+        cls, dt: datetime, timespec: str = "milliseconds"
+    ) -> "ISO8601Datetime":
+        """Create an ISO-8601 formatted string from a datetime object."""
+        # NOTE: Only a useful classmethod for creating these objects
+        return ISO8601Datetime(
+            dt.astimezone(tz=timezone.utc)
+            .isoformat(timespec=timespec)
+            .replace("+00:00", "Z")
+        )
+
+    @property
+    def _datetime(self) -> datetime:
+        return datetime_from_iso8601_string(self)
+
+
+def utc_now() -> datetime:
+    """Get the current datetime as UTC timezone."""
+    return datetime.now(tz=timezone.utc)
 
 
 class SiweMessage(BaseModel):
     """A Sign-in with Ethereum (EIP-4361) message."""
 
-    domain: str = Field(regex="^[^/?#]+$")
+    domain: str = Field(pattern="^[^/?#]+$")
     """RFC 4501 dns authority that is requesting the signing."""
     address: ChecksumAddress
     """Ethereum address performing the signing conformant to capitalization encoded
     checksum specified in EIP-55 where applicable.
     """
-    uri: AnyUrl
+    uri: AnyUrlStr
     """RFC 3986 URI referring to the resource that is the subject of the signing."""
     version: VersionEnum
     """Current version of the message."""
-    chain_id: int = Field(gt=0)
+    chain_id: NonNegativeInt
     """EIP-155 Chain ID to which the session is bound, and the network where Contract
     Accounts must be resolved.
     """
-    issued_at: CustomDateTime
+    issued_at: ISO8601Datetime
     """ISO 8601 datetime string of the current time."""
     nonce: str = Field(min_length=8)
     """Randomized token used to prevent replay attacks, at least 8 alphanumeric
     characters. Use generate_nonce() to generate a secure nonce and store it for
     verification later.
     """
-    statement: Optional[str] = Field(None, regex="^[^\n]+$")
+    statement: Optional[str] = Field(None, pattern="^[^\n]+$")
     """Human-readable ASCII assertion that the user will sign, and it must not contain
     `\n`.
     """
-    expiration_time: Optional[CustomDateTime] = Field(None)
+    expiration_time: Optional[ISO8601Datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message is no longer valid.
     """
-    not_before: Optional[CustomDateTime] = Field(None)
+    not_before: Optional[ISO8601Datetime] = None
     """ISO 8601 datetime string that, if present, indicates when the signed
     authentication message will become valid.
     """
-    request_id: Optional[str] = Field(None)
+    request_id: Optional[str] = None
     """System-specific identifier that may be used to uniquely refer to the sign-in
     request.
     """
-    resources: Optional[List[AnyUrl]] = Field(None, min_items=1)
+    resources: Optional[List[AnyUrlStr]] = None
     """List of information or references to information the user wishes to have resolved
     as part of authentication by the relying party. They are expressed as RFC 3986 URIs
     separated by `\n- `.
     """
 
-    @validator("address")
+    @field_validator("address")
     @classmethod
     def address_is_checksum_address(cls, v: str) -> str:
         """Validate the address follows EIP-55 formatting."""
@@ -174,15 +216,15 @@ class SiweMessage(BaseModel):
             else:
                 parsed_message = RegExpParsedMessage(message=message)
             message_dict = parsed_message.__dict__
+
         elif isinstance(message, dict):
             message_dict = message
+
         else:
-            raise TypeError
+            raise TypeError(f"Unhandable message type: '{type(message)}'.")
+
         # TODO There is some redundancy in the checks when deserialising a message.
-        try:
-            super().__init__(**message_dict)
-        except ValidationError as e:
-            raise ValueError from e
+        super().__init__(**message_dict)
 
     def prepare_message(self) -> str:
         """Serialize to the EIP-4361 format for signing.
@@ -265,13 +307,16 @@ class SiweMessage(BaseModel):
         if nonce is not None and self.nonce != nonce:
             raise NonceMismatch()
 
-        verification_time = datetime.now(UTC) if timestamp is None else timestamp
+        verification_time = utc_now() if timestamp is None else timestamp
         if (
             self.expiration_time is not None
-            and verification_time >= self.expiration_time.date
+            and verification_time >= self.expiration_time._datetime
         ):
             raise ExpiredMessage()
-        if self.not_before is not None and verification_time <= self.not_before.date:
+        if (
+            self.not_before is not None
+            and verification_time <= self.not_before._datetime
+        ):
             raise NotYetValidMessage()
 
         try:

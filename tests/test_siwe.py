@@ -1,12 +1,12 @@
 import json
 
 import pytest
-from dateutil.parser import isoparse
 from eth_account import Account, messages
 from humps import decamelize
 from web3 import HTTPProvider
+from pydantic import ValidationError
 
-from siwe.siwe import SiweMessage, VerificationError
+from siwe.siwe import SiweMessage, VerificationError, datetime_from_iso8601_string
 
 BASE_TESTS = "tests/siwe/test/"
 with open(BASE_TESTS + "parsing_positive.json", "r") as f:
@@ -51,7 +51,7 @@ class TestMessageParsing:
         [(test_name, test) for test_name, test in parsing_negative_objects.items()],
     )
     def test_invalid_object_message(self, test_name, test):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SiweMessage(message=test)
 
 
@@ -72,7 +72,7 @@ class TestMessageVerification:
     )
     def test_valid_message(self, test_name, test):
         siwe_message = SiweMessage(message=test)
-        timestamp = isoparse(test["time"]) if "time" in test else None
+        timestamp = datetime_from_iso8601_string(test["time"]) if "time" in test else None
         siwe_message.verify(test["signature"], timestamp=timestamp)
 
     @pytest.mark.parametrize(
@@ -97,13 +97,13 @@ class TestMessageVerification:
             "invalidnot_before",
             "invalidissued_at",
         ]:
-            with pytest.raises(ValueError):
+            with pytest.raises(ValidationError):
                 siwe_message = SiweMessage(message=test)
             return
         siwe_message = SiweMessage(message=test)
         domain_binding = test.get("domain_binding")
         match_nonce = test.get("match_nonce")
-        timestamp = isoparse(test["time"]) if "time" in test else None
+        timestamp = datetime_from_iso8601_string(test["time"]) if "time" in test else None
         with pytest.raises(VerificationError):
             siwe_message.verify(
                 test.get("signature"),
@@ -128,3 +128,7 @@ class TestMessageRoundTrip:
             messages.encode_defunct(text=message.prepare_message())
         ).signature
         message.verify(signature)
+
+    def test_schema_generation(self):
+        # NOTE: Needed so that FastAPI/OpenAPI json schema works
+        SiweMessage.model_json_schema()

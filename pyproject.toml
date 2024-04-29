@@ -14,19 +14,20 @@ keywords = ["SIWE", "EIP-4361", "Sign-In with Ethereum", "Spruce ID"]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
-abnf = "1.1.1"
-web3 = "^6.0.0"
-python-dateutil = "2.8.2"
-eth-account = ">=0.8.0,<0.11"
-eth-utils = "^2.2.0"
-eth-typing = "^3.4.0"
-pydantic = "^2.1.1"
+abnf = ">=2.2,<3"
+web3 = ">=6.17,<7"
+eth-account = ">=0.11,<0.12"
+eth-typing = "^4"  # peer of eth-account/web3
+eth-utils = "^4"  # peer of eth-account/web3
+pydantic = ">=2.7,<3"
+pydantic-core = "^2"  # peer of pydantic
+typing-extensions = "^4"  # peer of pydantic
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-pyhumps = "^3.5.0"
-ruff = "^0.3.4"
-deptry = "^0.15.0"
+pytest = ">=8.1"
+pyhumps = ">=3.8"
+ruff = ">=0.4"
+deptry = ">=0.16"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
