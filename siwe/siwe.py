@@ -71,6 +71,7 @@ class NotYetValidMessage(VerificationError):
 
     pass
 
+
 class SchemeMismatch(VerificationError):
     """The message does not contain the expected scheme."""
 
