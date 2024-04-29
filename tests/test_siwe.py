@@ -33,7 +33,7 @@ class TestMessageParsing:
         siwe_message = SiweMessage(message=test["message"], abnf=abnf)
         for key, value in test["fields"].items():
             v = getattr(siwe_message, key)
-            if not isinstance(v, int) and not isinstance(v, list):
+            if not (isinstance(v, int) or isinstance(v, list) or v is None):
                 v = str(v)
             assert v == value
 
