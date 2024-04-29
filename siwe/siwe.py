@@ -4,7 +4,7 @@ import secrets
 import string
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Iterable, List, Optional
 
 import eth_utils
 from eth_account.messages import SignableMessage, _hash_eip191_message, encode_defunct
@@ -218,16 +218,14 @@ class SiweMessage(BaseModel):
 
     @classmethod
     def from_message(cls, message: str, abnf: bool = True) -> "SiweMessage":
+        """Parse a message in its EIP-4361 format."""
         if abnf:
             parsed_message = ABNFParsedMessage(message=message)
         else:
             parsed_message = RegExpParsedMessage(message=message)
 
         # TODO There is some redundancy in the checks when deserialising a message.
-        try:
-            return cls(**parsed_message.__dict__)
-        except ValidationError as e:
-            raise ValueError from e
+        return cls(**parsed_message.__dict__)
 
     def prepare_message(self) -> str:
         """Serialize to the EIP-4361 format for signing.
