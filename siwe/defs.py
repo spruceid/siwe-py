@@ -1,5 +1,6 @@
 """Regexes for the various fields."""
 
+SCHEME = "((?P<scheme>([a-zA-Z][a-zA-Z0-9\\+\\-\\.]*))://)?"
 DOMAIN = "(?P<domain>([^/?#]+)) wants you to sign in with your Ethereum account:\\n"
 ADDRESS = "(?P<address>0x[a-zA-Z0-9]{40})\\n\\n"
 STATEMENT = "((?P<statement>[^\\n]+)\\n)?\\n"
@@ -19,6 +20,6 @@ NOT_BEFORE = f"(\\nNot Before: (?P<notBefore>{DATETIME}))?"
 REQUEST_ID = "(\\nRequest ID: (?P<requestId>[-._~!$&'()*+,;=:@%a-zA-Z0-9]*))?"
 RESOURCES = f"(\\nResources:(?P<resources>(\\n- {URI})+))?"
 REGEX_MESSAGE = (
-    f"^{DOMAIN}{ADDRESS}{STATEMENT}{URI_LINE}{VERSION}{CHAIN_ID}{NONCE}"
+    f"^{SCHEME}{DOMAIN}{ADDRESS}{STATEMENT}{URI_LINE}{VERSION}{CHAIN_ID}{NONCE}"
     f"{ISSUED_AT}{EXPIRATION_TIME}{NOT_BEFORE}{REQUEST_ID}{RESOURCES}$"
 )

@@ -71,6 +71,11 @@ class NotYetValidMessage(VerificationError):
 
     pass
 
+class SchemeMismatch(VerificationError):
+    """The message does not contain the expected scheme."""
+
+    pass
+
 
 class DomainMismatch(VerificationError):
     """The message does not contain the expected domain."""
@@ -157,6 +162,8 @@ def utc_now() -> datetime:
 class SiweMessage(BaseModel):
     """A Sign-in with Ethereum (EIP-4361) message."""
 
+    scheme: Optional[str] = None
+    """RFC 3986 URI scheme for the authority that is requesting the signing."""
     domain: str = Field(pattern="^[^/?#]+$")
     """RFC 4501 dns authority that is requesting the signing."""
     address: ChecksumAddress
@@ -234,6 +241,8 @@ class SiweMessage(BaseModel):
         :return: EIP-4361 formatted message, ready for EIP-191 signing.
         """
         header = f"{self.domain} wants you to sign in with your Ethereum account:"
+        if self.scheme:
+            header = f"{self.scheme}://{header}"
 
         uri_field = f"URI: {self.uri}"
 
@@ -281,6 +290,7 @@ class SiweMessage(BaseModel):
         self,
         signature: str,
         *,
+        scheme: Optional[str] = None,
         domain: Optional[str] = None,
         nonce: Optional[str] = None,
         timestamp: Optional[datetime] = None,
@@ -302,6 +312,8 @@ class SiweMessage(BaseModel):
         message = encode_defunct(text=self.prepare_message())
         w3 = Web3(provider=provider)
 
+        if scheme is not None and self.scheme != scheme:
+            raise SchemeMismatch()
         if domain is not None and self.domain != domain:
             raise DomainMismatch()
         if nonce is not None and self.nonce != nonce:

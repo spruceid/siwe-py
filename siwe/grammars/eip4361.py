@@ -14,6 +14,7 @@ from . import rfc3339, rfc5234
         # RFC 3986
         ("URI", rfc3986.Rule("URI")),
         ("authority", rfc3986.Rule("authority")),
+        ("scheme", rfc3986.Rule("scheme")),
         ("reserved", rfc3986.Rule("reserved")),
         ("unreserved", rfc3986.Rule("unreserved")),
         ("reserved", rfc3986.Rule("reserved")),
@@ -31,12 +32,12 @@ class Rule(_Rule):
     """Rules from EIP-4361."""
 
     grammar: ClassVar[List] = [
-        'sign-in-with-ethereum = domain %s" wants you to sign in with your Ethereum '
-        'account:" LF address LF LF [ statement LF ] LF %s"URI: " uri LF %s"Version: "'
-        ' version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF %s"Issued At: " '
-        'issued-at [ LF %s"Expiration Time: " expiration-time ] [ LF %s"Not Before: " '
-        'not-before ] [ LF %s"Request ID: " request-id ] [ LF %s"Resources:" resources '
-        "]",
+        'sign-in-with-ethereum = [ scheme "://" ] domain %s" wants you to sign in with '
+        'your Ethereum account:" LF address LF LF [ statement LF ] LF %s"URI: " uri LF '
+        '%s"Version: " version LF %s"Chain ID: " chain-id LF %s"Nonce: " nonce LF %s"'
+        'Issued At: " issued-at [ LF %s"Expiration Time: " expiration-time ] [ LF %s"'
+        'Not Before: " not-before ] [ LF %s"Request ID: " request-id ] [ LF %s"'
+        'Resources:" resources ]',
         "domain = authority",
         'address = "0x" 40HEXDIG',
         'statement = 1*( reserved / unreserved / " " )',
