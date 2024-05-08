@@ -5,11 +5,11 @@ from .siwe import (
     DomainMismatch,
     ExpiredMessage,
     InvalidSignature,
+    ISO8601Datetime,
     MalformedSession,
     NonceMismatch,
     NotYetValidMessage,
     SiweMessage,
     VerificationError,
     generate_nonce,
-    ISO8601Datetime,
 )
