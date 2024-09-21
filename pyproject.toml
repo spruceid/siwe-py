@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "siwe"
-version = "4.2.0"
+version = "4.2.1"
 description = "A Python implementation of Sign-In with Ethereum (EIP-4361)."
 license = "MIT OR Apache-2.0"
 authors = [
@@ -17,8 +17,8 @@ python = ">=3.8,<4.0"
 abnf = ">=2.2,<3"
 eth-utils = ">=2.2.0"
 pydantic = ">=2.7,<3"
-pydantic-core = "^2"           # peer of pydantic
-typing-extensions = "^4"       # peer of pydantic
+pydantic-core = "^2"     # peer of pydantic
+typing-extensions = "^4" # peer of pydantic
 web3 = "^7.2.0"
 
 [tool.poetry.dev-dependencies]
