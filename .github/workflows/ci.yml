@@ -27,6 +27,8 @@ jobs:
         run: poetry install && echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
       - name: Test
         run: poetry run pytest -v
+        env:
+          WEB3_PROVIDER_URI: '${{ secrets.WEB3_PROVIDER_URI }}'
       - name: Fmt
         run: poetry run ruff format . --check
       - name: Ruff
