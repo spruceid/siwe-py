@@ -23,6 +23,11 @@ with open(BASE_TESTS + "verification_positive.json", "r") as f:
 with open(BASE_TESTS + "eip1271.json", "r") as f:
     verification_eip1271 = decamelize(json.load(fp=f))
 
+try:
+    endpoint_uri = os.environ["WEB3_PROVIDER_URI"]
+except KeyError:
+    endpoint_uri = "https://cloudflare-eth.com"
+
 
 class TestMessageParsing:
     @pytest.mark.parametrize("abnf", [True, False])
@@ -85,16 +90,12 @@ class TestMessageVerification:
     def test_eip1271_message(self, test_name, test):
         if test_name == "loopring":
             pytest.skip()
-        try:
-            endpoint_uri = os.environ["WEB3_PROVIDER_URI"]
-        except KeyError:
-            endpoint_uri = "https://cloudflare-eth.com"
         provider = HTTPProvider(endpoint_uri=endpoint_uri)
         siwe_message = SiweMessage.from_message(message=test["message"])
         siwe_message.verify(test["signature"], provider=provider)
 
     @pytest.mark.parametrize(
-        "provider", [HTTPProvider(endpoint_uri="https://cloudflare-eth.com"), None]
+        "provider", [HTTPProvider(endpoint_uri=endpoint_uri), None]
     )
     @pytest.mark.parametrize(
         "test_name,test",
