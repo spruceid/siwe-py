@@ -21,7 +21,7 @@ from pydantic import (
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 from web3 import HTTPProvider, Web3
-from web3.exceptions import BadFunctionCallOutput
+from web3.exceptions import BadFunctionCallOutput, ContractLogicError
 
 from .parsed import ABNFParsedMessage, RegExpParsedMessage
 
@@ -327,7 +327,7 @@ class SiweMessage(BaseModel):
 
         try:
             address = w3.eth.account.recover_message(message, signature=signature)
-        except ValueError:
+        except (ValueError, IndexError):
             address = None
         except eth_utils.exceptions.ValidationError:
             raise InvalidSignature from None
@@ -355,7 +355,11 @@ def check_contract_wallet_signature(
     contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
     hash_ = _hash_eip191_message(message)
     try:
-        response = contract.caller.isValidSignature(hash_, bytes.fromhex(signature[2:]))
+        # Signatures returned from Safe wallets are always "0x" and should be
+        # passed in as-is.
+        response = contract.caller.isValidSignature(
+            hash_, signature if signature == "0x" else bytes.fromhex(signature[2:])
+        )
         return response.hex() == EIP1271_MAGICVALUE
-    except BadFunctionCallOutput:
+    except (BadFunctionCallOutput, ContractLogicError):
         return False
