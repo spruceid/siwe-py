@@ -97,7 +97,9 @@ class TestMessageVerification:
     def test_safe_wallet_message(self):
         message = "localhost:3000 wants you to sign in with your Ethereum account:\n0x54D97AEa047838CAC7A9C3e452951647f12a440c\n\nPlease sign in to verify your ownership of this wallet\n\nURI: http://localhost:3000\nVersion: 1\nChain ID: 11155111\nNonce: gDj8rv7VVxN\nIssued At: 2024-10-10T08:34:03.152Z\nExpiration Time: 2024-10-13T08:34:03.249112Z"
         signature = "0x"
-        provider = HTTPProvider(endpoint_uri=endpoint_uri)
+        # Use a Sepolia RPC node since the signature is generated on Sepolia testnet
+        # instead of mainnet like other EIP-1271 tests.
+        provider = HTTPProvider(endpoint_uri="https://rpc.sepolia.org")
         siwe_message = SiweMessage.from_message(message=message)
         siwe_message.verify(signature, provider=provider)
 
