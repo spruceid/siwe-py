@@ -355,8 +355,8 @@ def check_contract_wallet_signature(
     contract = w3.eth.contract(address=address, abi=EIP1271_CONTRACT_ABI)
     hash_ = _hash_eip191_message(message)
     try:
-        # Signatures returned from Safe wallets are always "0x" and should be
-        # passed in as-is.
+        # For message hashes stored on-chain for Safe wallets, the signatures
+        # are always "0x" and should be passed in as-is.
         response = contract.caller.isValidSignature(
             hash_, signature if signature == "0x" else bytes.fromhex(signature[2:])
         )
