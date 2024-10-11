@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "siwe"
-version = "4.3.0"
+version = "4.4.0"
 description = "A Python implementation of Sign-In with Ethereum (EIP-4361)."
 license = "MIT OR Apache-2.0"
 authors = [
