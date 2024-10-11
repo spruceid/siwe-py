@@ -23,10 +23,20 @@ with open(BASE_TESTS + "verification_positive.json", "r") as f:
 with open(BASE_TESTS + "eip1271.json", "r") as f:
     verification_eip1271 = decamelize(json.load(fp=f))
 
+endpoint_uri = "https://cloudflare-eth.com"
 try:
-    endpoint_uri = os.environ["WEB3_PROVIDER_URI"]
+    uri = os.environ["WEB3_PROVIDER_URI"]
+    if uri != "":
+        endpoint_uri = uri
 except KeyError:
-    endpoint_uri = "https://cloudflare-eth.com"
+    pass
+sepolia_endpoint_uri = "https://rpc.sepolia.org"
+try:
+    uri = os.environ["WEB3_PROVIDER_URI_SEPOLIA"]
+    if uri != "":
+        sepolia_endpoint_uri = uri
+except KeyError:
+    pass
 
 
 class TestMessageParsing:
@@ -99,7 +109,7 @@ class TestMessageVerification:
         signature = "0x"
         # Use a Sepolia RPC node since the signature is generated on Sepolia testnet
         # instead of mainnet like other EIP-1271 tests.
-        provider = HTTPProvider(endpoint_uri="https://rpc.sepolia.org")
+        provider = HTTPProvider(endpoint_uri=sepolia_endpoint_uri)
         siwe_message = SiweMessage.from_message(message=message)
         siwe_message.verify(signature, provider=provider)
 
